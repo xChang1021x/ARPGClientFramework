@@ -41,7 +41,6 @@ namespace ARPG.Framework.Pool
 
             _pool = new ObjectPool<GameObject>(
                 createFunc: CreateInstance,
-                onGet: OnGet,
                 onRelease: OnRelease,
                 onDestroy: OnDestroy,
                 defaultCapacity: defaultCapacity,
@@ -52,20 +51,31 @@ namespace ARPG.Framework.Pool
         /// 从池中获取GameObject。
         /// </summary>
         public GameObject Get(
-            Vector3 position,
-            Quaternion rotation,
-            Transform parent = null)
+    Vector3 position,
+    Quaternion rotation,
+    Transform parent = null)
         {
             GameObject instance = _pool.Get();
 
             Transform instanceTransform = instance.transform;
-
             instanceTransform.SetParent(parent);
-            instanceTransform.SetPositionAndRotation(
-                position,
-                rotation);
+            instanceTransform.SetPositionAndRotation(position, rotation);
+
+            Activate(instance);
 
             return instance;
+        }
+
+        private static void Activate(GameObject instance)
+        {
+            PooledObject pooledObject =
+                instance.GetComponent<PooledObject>();
+
+            pooledObject.MarkSpawned();
+
+            instance.SetActive(true);
+
+            InvokePoolableSpawn(instance);
         }
 
         /// <summary>
