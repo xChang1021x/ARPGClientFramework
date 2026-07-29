@@ -34,8 +34,8 @@ namespace ARPG.Framework.Event
                 {
                     if (registeredHandler.Equals(handler))
                     {
-                        return new EventSubscription(
-                            () => Unsubscribe(handler));
+                        throw new InvalidOperationException(
+    $"Handler '{handler.Method.Name}' has already subscribed to '{eventType.Name}'.");
                     }
                 }
 
