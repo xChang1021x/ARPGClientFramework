@@ -1,6 +1,4 @@
 using ARPG.Framework.Core;
-using ARPG.Framework.Event;
-using ARPG.Game.Events;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -14,6 +12,20 @@ namespace ARPG.Game.Bootstrap
     public sealed class GameLauncher : MonoBehaviour
     {
         private static GameLauncher _instance;
+
+        public static GameLauncher Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    throw new System.InvalidOperationException(
+                        "GameLauncher has not been initialized.");
+                }
+
+                return _instance;
+            }
+        }
 
         private GameContext _gameContext;
 
@@ -53,8 +65,6 @@ namespace ARPG.Game.Bootstrap
             RegisterServices(_gameContext);
 
             _gameContext.Initialize();
-
-            TestEventBus();
 
             EnterGame();
         }
@@ -96,21 +106,5 @@ namespace ARPG.Game.Bootstrap
             _instance = null;
         }
 
-        private void TestEventBus()
-        {
-            EventBus eventBus = _gameContext.EventBus;
-
-            eventBus.Subscribe<TestGameStartedEvent>(
-                OnGameStarted);
-
-            eventBus.Publish(
-                new TestGameStartedEvent("ARPG Client Started"));
-        }
-
-        private static void OnGameStarted(
-            TestGameStartedEvent eventData)
-        {
-            Debug.Log(eventData.Message);
-        }
     }
 }

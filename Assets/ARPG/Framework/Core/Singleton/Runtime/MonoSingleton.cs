@@ -1,7 +1,7 @@
 using UnityEngine;
 
 
-namespace Framework.Core.Singleton
+namespace ARPG.Framework.Core.Singleton
 {
 
     public abstract class MonoSingleton<T>

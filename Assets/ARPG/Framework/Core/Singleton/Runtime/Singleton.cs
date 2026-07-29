@@ -1,4 +1,4 @@
-namespace Framework.Core.Singleton
+namespace ARPG.Framework.Core.Singleton
 {
     /// <summary>
     /// 泛型单例基类

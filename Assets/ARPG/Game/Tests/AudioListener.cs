@@ -1,5 +1,6 @@
 using System;
 using ARPG.Framework.Event;
+using ARPG.Game.Bootstrap;
 using ARPG.Game.Events;
 using UnityEngine;
 
@@ -10,27 +11,24 @@ namespace ARPG.Game.Tests
         private EventBus _eventBus = null!;
         private IDisposable _subscription;
 
-        public void Initialize(EventBus eventBus)
-        {
-            _eventBus = eventBus;
-        }
-
         private void OnEnable()
         {
-            if (_eventBus is null)
-            {
-                return;
-            }
+            _eventBus =
+                GameLauncher.Instance.GameContext.EventBus;
 
             _subscription =
                 _eventBus.Subscribe<CharacterDiedEvent>(
                     OnCharacterDied);
+
+            Debug.Log("[Listener] Subscribed.");
         }
 
         private void OnDisable()
         {
             _subscription?.Dispose();
             _subscription = null;
+
+            Debug.Log("[Listener] Unsubscribed.");
         }
 
         private static void OnCharacterDied(
