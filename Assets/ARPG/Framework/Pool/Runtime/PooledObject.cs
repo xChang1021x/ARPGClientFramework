@@ -14,10 +14,14 @@ namespace ARPG.Framework.Pool
 
         public bool IsSpawned { get; private set; }
 
+        private IPoolable[] _poolableComponents;
+
         internal void Initialize(Action<GameObject> releaseAction)
         {
             _releaseAction = releaseAction
                 ?? throw new ArgumentNullException(nameof(releaseAction));
+
+            _poolableComponents = GetComponents<IPoolable>();
         }
 
         internal void MarkSpawned()
@@ -54,6 +58,26 @@ namespace ARPG.Framework.Pool
             }
 
             _releaseAction.Invoke(gameObject);
+        }
+
+        internal void NotifySpawned()
+        {
+            MarkSpawned();
+
+            foreach (IPoolable poolable in _poolableComponents)
+            {
+                poolable.OnSpawn();
+            }
+        }
+
+        internal void NotifyDespawned()
+        {
+            foreach (IPoolable poolable in _poolableComponents)
+            {
+                poolable.OnDespawn();
+            }
+
+            MarkDespawned();
         }
     }
 }
