@@ -1,4 +1,5 @@
 using ARPG.Framework.Core;
+using ARPG.Framework.Logging;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -60,13 +61,26 @@ namespace ARPG.Game.Bootstrap
 
         private void InitializeApplication()
         {
-            _gameContext = new GameContext();
+            Framework.Logging.ILogger logger = new UnityLogger();
+
+            LogLevel minimumLevel =
+                Debug.isDebugBuild
+                    ? LogLevel.Debug
+                    : LogLevel.Warning;
+
+            _gameContext = new GameContext(
+                logger,
+                minimumLevel);
 
             CreateRuntimeDrivers();
 
             RegisterServices(_gameContext);
 
             _gameContext.Initialize();
+
+            _gameContext.LogService.Info(
+                "Bootstrap",
+                "Game context initialized.");
 
             EnterGame();
         }
