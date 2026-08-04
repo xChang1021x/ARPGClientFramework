@@ -248,6 +248,12 @@ namespace ARPG.Framework.Timer
                 task.Handle.MarkCompleted();
             }
 
+            if (_isTicking)
+            {
+                _pendingTasks.Clear();
+                return;
+            }
+
             _tasks.Clear();
             _pendingTasks.Clear();
         }
