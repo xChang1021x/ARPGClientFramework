@@ -62,6 +62,8 @@ namespace ARPG.Game.Bootstrap
         {
             _gameContext = new GameContext();
 
+            CreateRuntimeDrivers();
+
             RegisterServices(_gameContext);
 
             _gameContext.Initialize();
@@ -106,5 +108,13 @@ namespace ARPG.Game.Bootstrap
             _instance = null;
         }
 
+        private void CreateRuntimeDrivers()
+        {
+            TimerDriver timerDriver =
+                gameObject.AddComponent<TimerDriver>();
+
+            timerDriver.Initialize(
+                _gameContext.TimerService);
+        }
     }
 }
