@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using ARPG.Framework.Event;
 using ARPG.Framework.Timer;
+using ARPG.Framework.Logging;
 
 namespace ARPG.Framework.Core
 {
@@ -18,11 +19,23 @@ namespace ARPG.Framework.Core
 
         public EventBus EventBus { get; }
         public TimerService TimerService { get; }
+        public LogService LogService { get; }
 
-        public GameContext()
+        public GameContext(
+    ILogger logger,
+    LogLevel minimumLogLevel)
         {
+            if (logger == null)
+            {
+                throw new ArgumentNullException(nameof(logger));
+            }
+
             EventBus = new EventBus();
             TimerService = new TimerService();
+
+            LogService = new LogService(
+                logger,
+                minimumLogLevel);
         }
 
         /// <summary>
