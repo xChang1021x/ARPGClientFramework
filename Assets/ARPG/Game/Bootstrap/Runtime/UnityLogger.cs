@@ -1,13 +1,14 @@
 using System;
 using ARPG.Framework.Logging;
 using UnityEngine;
+using FrameworkLogger = ARPG.Framework.Logging.ILogger;
 
 namespace ARPG.Game.Bootstrap
 {
     /// <summary>
     /// 基于UnityEngine.Debug的日志输出实现。
     /// </summary>
-    public sealed class UnityLogger : Framework.Logging.ILogger
+    public sealed class UnityLogger : FrameworkLogger
     {
         public void Log(
             LogLevel level,

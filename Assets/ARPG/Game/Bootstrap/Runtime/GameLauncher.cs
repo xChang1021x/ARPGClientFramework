@@ -2,6 +2,7 @@ using ARPG.Framework.Core;
 using ARPG.Framework.Logging;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using FrameworkLogger = ARPG.Framework.Logging.ILogger;
 
 namespace ARPG.Game.Bootstrap
 {
@@ -61,7 +62,7 @@ namespace ARPG.Game.Bootstrap
 
         private void InitializeApplication()
         {
-            Framework.Logging.ILogger logger = new UnityLogger();
+            FrameworkLogger logger = new UnityLogger();
 
             LogLevel minimumLevel =
                 Debug.isDebugBuild
