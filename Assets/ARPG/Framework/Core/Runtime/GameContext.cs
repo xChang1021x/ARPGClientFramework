@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ARPG.Framework.Event;
+using ARPG.Framework.Timer;
 
 namespace ARPG.Framework.Core
 {
@@ -16,10 +17,12 @@ namespace ARPG.Framework.Core
         private bool _isDisposed;
 
         public EventBus EventBus { get; }
+        public TimerService TimerService { get; }
 
         public GameContext()
         {
             EventBus = new EventBus();
+            TimerService = new TimerService();
         }
 
         /// <summary>
@@ -79,7 +82,9 @@ namespace ARPG.Framework.Core
                 _services[index].Shutdown();
             }
 
+            TimerService.Dispose();
             EventBus.ClearAll();
+
             _services.Clear();
 
             _isDisposed = true;
