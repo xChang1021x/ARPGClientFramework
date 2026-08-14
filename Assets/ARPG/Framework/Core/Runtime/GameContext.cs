@@ -88,5 +88,27 @@ namespace ARPG.Framework.Core
 
             _isDisposed = true;
         }
+
+        public void RegisterService(IGameService service)
+        {
+            if (service == null)
+            {
+                throw new ArgumentNullException(nameof(service));
+            }
+
+            if (_isInitialized)
+            {
+                throw new InvalidOperationException(
+                    "Cannot register services after GameContext has initialized.");
+            }
+
+            if (_services.Contains(service))
+            {
+                throw new InvalidOperationException(
+                    $"Service '{service.GetType().Name}' has already been registered.");
+            }
+
+            _services.Add(service);
+        }
     }
 }
