@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ARPG.Framework.Diagnostics;
 
 namespace ARPG.Framework.Event
 {
@@ -10,6 +11,14 @@ namespace ARPG.Framework.Event
     public sealed class EventBus
     {
         private readonly Dictionary<Type, Delegate> _handlers = new();
+
+        private readonly IExceptionReporter _exceptionReporter;
+
+        public EventBus(
+    IExceptionReporter exceptionReporter = null)
+        {
+            _exceptionReporter = exceptionReporter;
+        }
 
         /// <summary>
         /// 订阅指定类型的事件。
@@ -82,20 +91,17 @@ namespace ARPG.Framework.Event
         /// 同步发布事件。
         /// </summary>
         public void Publish<TEvent>(TEvent eventData)
-            where TEvent : IEvent
+    where TEvent : IEvent
         {
             Type eventType = typeof(TEvent);
 
-            if (!_handlers.TryGetValue(eventType, out Delegate existingDelegate))
+            if (!_handlers.TryGetValue(
+                    eventType,
+                    out Delegate existingDelegate))
             {
                 return;
             }
 
-            /*
-             * 获取调用列表快照。
-             * 即使某个监听者在回调中取消订阅，
-             * 也不会破坏本次遍历。
-             */
             Delegate[] invocationList =
                 existingDelegate.GetInvocationList();
 
@@ -107,14 +113,26 @@ namespace ARPG.Framework.Event
                 }
                 catch (Exception exception)
                 {
-                    /*
-                     * Framework层不应直接依赖UnityEngine.Debug。
-                     * 当前先抛出异常，后续可以接入统一日志系统。
-                     */
-                    throw new EventDispatchException(
-                        eventType,
-                        callback.Method.Name,
-                        exception);
+                    var dispatchException =
+                        new EventDispatchException(
+                            eventType,
+                            callback.Method.Name,
+                            exception);
+
+                    if (_exceptionReporter != null)
+                    {
+                        _exceptionReporter.Report(
+                            category: "EventBus",
+                            message:
+                                $"Failed to dispatch " +
+                                $"'{eventType.Name}' to " +
+                                $"'{callback.Method.Name}'.",
+                            exception: dispatchException);
+
+                        continue;
+                    }
+
+                    throw dispatchException;
                 }
             }
         }

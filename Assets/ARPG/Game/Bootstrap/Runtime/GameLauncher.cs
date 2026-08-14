@@ -1,3 +1,4 @@
+using System;
 using ARPG.Framework.Core;
 using ARPG.Framework.Logging;
 using UnityEngine;
@@ -13,6 +14,9 @@ namespace ARPG.Game.Bootstrap
     [DisallowMultipleComponent]
     public sealed class GameLauncher : MonoBehaviour
     {
+        [SerializeField]
+        private string _entrySceneName = "Main";
+
         private static GameLauncher _instance;
 
         public static GameLauncher Instance
@@ -104,11 +108,16 @@ namespace ARPG.Game.Bootstrap
              */
         }
 
-        private static void EnterGame()
+        private void EnterGame()
         {
-            const string mainSceneName = "Main";
+            if (string.IsNullOrWhiteSpace(_entrySceneName))
+            {
+                throw new InvalidOperationException(
+                    "Entry scene name cannot be empty.");
+            }
 
-            SceneManager.LoadScene(mainSceneName);
+            SceneManager.LoadScene(
+                _entrySceneName);
         }
 
         private void OnDestroy()

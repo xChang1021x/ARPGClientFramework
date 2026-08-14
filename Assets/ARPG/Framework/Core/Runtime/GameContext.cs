@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ARPG.Framework.Event;
 using ARPG.Framework.Timer;
 using ARPG.Framework.Logging;
+using ARPG.Framework.Diagnostics;
 
 namespace ARPG.Framework.Core
 {
@@ -17,49 +18,34 @@ namespace ARPG.Framework.Core
         private bool _isInitialized;
         private bool _isDisposed;
 
-        public EventBus EventBus { get; }
-        public TimerService TimerService { get; }
         public LogService LogService { get; }
 
+        public IExceptionReporter ExceptionReporter { get; }
+
+        public EventBus EventBus { get; }
+
+        public TimerService TimerService { get; }
+
         public GameContext(
-    ILogger logger,
-    LogLevel minimumLogLevel)
+            ILogger logger,
+            LogLevel minimumLogLevel)
         {
             if (logger == null)
-            {
                 throw new ArgumentNullException(nameof(logger));
-            }
-
-            EventBus = new EventBus();
-            TimerService = new TimerService();
 
             LogService = new LogService(
                 logger,
                 minimumLogLevel);
-        }
 
-        /// <summary>
-        /// 注册需要统一管理生命周期的服务。
-        /// 注册顺序即初始化顺序。
-        /// </summary>
-        public void RegisterService(IGameService service)
-        {
-            if (service == null)
-                throw new ArgumentNullException(nameof(service));
+            ExceptionReporter =
+                new LoggingExceptionReporter(
+                    LogService);
 
-            if (_isInitialized)
-            {
-                throw new InvalidOperationException(
-                    "Cannot register services after GameContext has initialized.");
-            }
+            EventBus = new EventBus(
+                ExceptionReporter);
 
-            if (_services.Contains(service))
-            {
-                throw new InvalidOperationException(
-                    $"Service '{service.GetType().Name}' has already been registered.");
-            }
-
-            _services.Add(service);
+            TimerService = new TimerService(
+                ExceptionReporter);
         }
 
         /// <summary>

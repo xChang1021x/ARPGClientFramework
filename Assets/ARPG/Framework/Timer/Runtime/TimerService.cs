@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ARPG.Framework.Diagnostics;
 
 namespace ARPG.Framework.Timer
 {
@@ -30,11 +31,19 @@ namespace ARPG.Framework.Timer
         private readonly List<TimerTask> _tasks = new();
         private readonly List<TimerTask> _pendingTasks = new();
 
+        private readonly IExceptionReporter _exceptionReporter;
+
         private bool _isTicking;
         private bool _isDisposed;
 
         public int ActiveTimerCount =>
             _tasks.Count + _pendingTasks.Count;
+
+        public TimerService(
+    IExceptionReporter exceptionReporter = null)
+        {
+            _exceptionReporter = exceptionReporter;
+        }
 
         /// <summary>
         /// 创建一次性延迟任务。
@@ -186,7 +195,10 @@ namespace ARPG.Framework.Timer
                         continue;
                     }
 
-                    ExecuteTask(task);
+                    if (!TryExecuteTask(task, index))
+                    {
+                        continue;
+                    }
 
                     if (task.IsCancelled)
                     {
@@ -269,17 +281,39 @@ namespace ARPG.Framework.Timer
             _isDisposed = true;
         }
 
-        private static void ExecuteTask(TimerTask task)
+        private bool TryExecuteTask(
+    TimerTask task,
+    int taskIndex)
         {
             try
             {
                 task.Callback.Invoke();
+                return true;
             }
             catch (Exception exception)
             {
-                throw new TimerCallbackException(
-                    task.Callback.Method.Name,
-                    exception);
+                TimerCallbackException callbackException =
+                    new TimerCallbackException(
+                        task.Callback.Method.Name,
+                        exception);
+
+                RemoveTaskAt(
+                    taskIndex,
+                    markCompleted: true);
+
+                if (_exceptionReporter != null)
+                {
+                    _exceptionReporter.Report(
+                        category: "Timer",
+                        message:
+                            $"Timer callback " +
+                            $"'{task.Callback.Method.Name}' failed.",
+                        exception: callbackException);
+
+                    return false;
+                }
+
+                throw callbackException;
             }
         }
 
