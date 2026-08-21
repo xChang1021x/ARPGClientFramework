@@ -4,6 +4,7 @@ using ARPG.Framework.Event;
 using ARPG.Framework.Timer;
 using ARPG.Framework.Logging;
 using ARPG.Framework.Diagnostics;
+using ARPG.Framework.Config;
 
 namespace ARPG.Framework.Core
 {
@@ -26,12 +27,16 @@ namespace ARPG.Framework.Core
 
         public TimerService TimerService { get; }
 
+        public ConfigService ConfigService { get; }
+
         public GameContext(
-            ILogger logger,
-            LogLevel minimumLogLevel)
+    ILogger logger,
+    LogLevel minimumLogLevel)
         {
             if (logger == null)
+            {
                 throw new ArgumentNullException(nameof(logger));
+            }
 
             LogService = new LogService(
                 logger,
@@ -46,6 +51,10 @@ namespace ARPG.Framework.Core
 
             TimerService = new TimerService(
                 ExceptionReporter);
+
+            ConfigService = new ConfigService();
+
+            RegisterService(ConfigService);
         }
 
         /// <summary>
