@@ -1,6 +1,7 @@
 using System;
 using ARPG.Framework.Core;
 using ARPG.Framework.Logging;
+using ARPG.Game.Config;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using FrameworkLogger = ARPG.Framework.Logging.ILogger;
@@ -66,7 +67,8 @@ namespace ARPG.Game.Bootstrap
 
         private void InitializeApplication()
         {
-            FrameworkLogger logger = new UnityLogger();
+            FrameworkLogger logger =
+                new UnityLogger();
 
             LogLevel minimumLevel =
                 Debug.isDebugBuild
@@ -77,15 +79,12 @@ namespace ARPG.Game.Bootstrap
                 logger,
                 minimumLevel);
 
+            RegisterConfigs(
+                _gameContext);
+
             CreateRuntimeDrivers();
 
-            RegisterServices(_gameContext);
-
             _gameContext.Initialize();
-
-            _gameContext.LogService.Info(
-                "Bootstrap",
-                "Game context initialized.");
 
             EnterGame();
         }
@@ -139,6 +138,16 @@ namespace ARPG.Game.Bootstrap
 
             timerDriver.Initialize(
                 _gameContext.TimerService);
+        }
+
+        private static void RegisterConfigs(
+    GameContext context)
+        {
+            context.ConfigService.Register(
+                new PlayerConfig(
+                    maxHealth: 1000,
+                    attack: 120,
+                    moveSpeed: 5f));
         }
     }
 }
