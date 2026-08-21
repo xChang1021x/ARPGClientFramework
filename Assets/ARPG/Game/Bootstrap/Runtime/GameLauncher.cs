@@ -18,6 +18,9 @@ namespace ARPG.Game.Bootstrap
         [SerializeField]
         private string _entrySceneName = "Main";
 
+        [SerializeField]
+        private GameConfigManifest _configManifest;
+
         private static GameLauncher _instance;
 
         public static GameLauncher Instance
@@ -79,12 +82,17 @@ namespace ARPG.Game.Bootstrap
                 logger,
                 minimumLevel);
 
-            RegisterConfigs(
-                _gameContext);
+            RegisterConfigs();
 
             CreateRuntimeDrivers();
 
+            RegisterServices(_gameContext);
+
             _gameContext.Initialize();
+
+            _gameContext.LogService.Info(
+                "Bootstrap",
+                "Game context initialized.");
 
             EnterGame();
         }
@@ -140,14 +148,20 @@ namespace ARPG.Game.Bootstrap
                 _gameContext.TimerService);
         }
 
-        private static void RegisterConfigs(
-    GameContext context)
+        private void RegisterConfigs()
         {
-            context.ConfigService.Register(
-                new PlayerConfig(
-                    maxHealth: 1000,
-                    attack: 120,
-                    moveSpeed: 5f));
+            if (_configManifest == null)
+            {
+                throw new InvalidOperationException(
+                    "Game config manifest has not been assigned.");
+            }
+
+            _configManifest.RegisterAll(
+                _gameContext.ConfigService);
+
+            _gameContext.LogService.Info(
+                "Config",
+                "Game configuration registered.");
         }
     }
 }
