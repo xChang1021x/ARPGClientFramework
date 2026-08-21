@@ -28,15 +28,24 @@ namespace ARPG.Framework.Config
         /// 注册配置。
         /// 同一种配置类型只能注册一次。
         /// </summary>
-        public void Register<TConfig>(TConfig config)
-            where TConfig : class, IConfig
+        public void Register<TConfig>(
+    TConfig config)
+    where TConfig : class, IConfig
         {
-            if (config == null)
+            if (_isInitialized)
             {
-                throw new ArgumentNullException(nameof(config));
+                throw new InvalidOperationException(
+                    "Cannot register configs after ConfigService initialization.");
             }
 
-            Type configType = typeof(TConfig);
+            if (config == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(config));
+            }
+
+            Type configType =
+                typeof(TConfig);
 
             if (_configs.ContainsKey(configType))
             {
