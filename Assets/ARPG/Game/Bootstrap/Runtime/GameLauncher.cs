@@ -1,7 +1,12 @@
 using System;
+using ARPG.Framework.Config;
 using ARPG.Framework.Core;
+using ARPG.Framework.Diagnostics;
+using ARPG.Framework.Event;
 using ARPG.Framework.Logging;
+using ARPG.Framework.Timer;
 using ARPG.Game.Config;
+using ARPG.Game.Player;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using FrameworkLogger = ARPG.Framework.Logging.ILogger;
@@ -70,6 +75,31 @@ namespace ARPG.Game.Bootstrap
 
         private void InitializeApplication()
         {
+            _gameContext =
+                new GameContext();
+
+            RegisterCoreServices();
+
+            RegisterConfigs();
+
+            CreateRuntimeDrivers();
+
+            RegisterGameServices();
+
+            _gameContext.Initialize();
+
+            GetLogService().Info(
+                "Bootstrap",
+                "Game context initialized.");
+
+            EnterGame();
+        }
+
+        private void RegisterCoreServices()
+        {
+            ServiceContainer services =
+                _gameContext.Services;
+
             FrameworkLogger logger =
                 new UnityLogger();
 
@@ -78,41 +108,60 @@ namespace ARPG.Game.Bootstrap
                     ? LogLevel.Debug
                     : LogLevel.Warning;
 
-            _gameContext = new GameContext(
-                logger,
-                minimumLevel);
+            var logService =
+                new LogService(
+                    logger,
+                    minimumLevel);
 
-            RegisterConfigs();
+            var exceptionReporter =
+                new LoggingExceptionReporter(
+                    logService);
 
-            CreateRuntimeDrivers();
+            var eventBus =
+                new EventBus(
+                    exceptionReporter);
 
-            RegisterServices(_gameContext);
+            var timerService =
+                new TimerService(
+                    exceptionReporter);
 
-            _gameContext.Initialize();
+            var configService =
+                new ConfigService();
 
-            _gameContext.LogService.Info(
-                "Bootstrap",
-                "Game context initialized.");
+            services.Register(
+                logService);
 
-            EnterGame();
+            services.Register<IExceptionReporter>(
+                exceptionReporter);
+
+            services.Register(
+                eventBus);
+
+            services.Register(
+                timerService);
+
+            services.Register(
+                configService);
         }
 
         /// <summary>
         /// 按依赖顺序注册服务。
         /// 被其他服务依赖的模块必须先注册。
         /// </summary>
-        private static void RegisterServices(GameContext context)
+        private void RegisterGameServices()
         {
-            /*
-             * 当前Day2暂时没有其他服务。
-             *
-             * 后续会逐步添加：
-             *
-             * context.RegisterService(new ConfigService(...));
-             * context.RegisterService(new ResourceService(...));
-             * context.RegisterService(new NetworkService(...));
-             * context.RegisterService(new UIService(...));
-             */
+            ServiceContainer services =
+                _gameContext.Services;
+
+            ConfigService configService =
+                services.Get<ConfigService>();
+
+            var playerService =
+                new PlayerService(
+                    configService);
+
+            services.Register<IPlayerService>(
+                playerService);
         }
 
         private void EnterGame()
@@ -141,11 +190,15 @@ namespace ARPG.Game.Bootstrap
 
         private void CreateRuntimeDrivers()
         {
+            TimerService timerService =
+                _gameContext.Services
+                    .Get<TimerService>();
+
             TimerDriver timerDriver =
                 gameObject.AddComponent<TimerDriver>();
 
             timerDriver.Initialize(
-                _gameContext.TimerService);
+                timerService);
         }
 
         private void RegisterConfigs()
@@ -156,12 +209,21 @@ namespace ARPG.Game.Bootstrap
                     "Game config manifest has not been assigned.");
             }
 
-            _configManifest.RegisterAll(
-                _gameContext.ConfigService);
+            ConfigService configService =
+                _gameContext.Services
+                    .Get<ConfigService>();
 
-            _gameContext.LogService.Info(
+            _configManifest.RegisterAll(
+                configService);
+
+            GetLogService().Info(
                 "Config",
                 "Game configuration registered.");
+        }
+
+        private LogService GetLogService()
+        {
+            return _gameContext.Services.Get<LogService>();
         }
     }
 }
