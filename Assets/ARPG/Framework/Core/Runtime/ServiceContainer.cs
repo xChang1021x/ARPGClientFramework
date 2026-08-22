@@ -10,7 +10,9 @@ namespace ARPG.Framework.Core
     public sealed class ServiceContainer : IDisposable
     {
         private readonly Dictionary<Type, object> _services = new();
-        private readonly List<IGameService> _lifecycleServices = new();
+        private readonly HashSet<object> _lifecycleInstances = new();
+        private readonly List<IInitializable> _initializables = new();
+        private readonly List<IShutdownable> _shutdownables = new();
 
         private bool _isInitialized;
         private bool _isDisposed;
@@ -50,10 +52,19 @@ namespace ARPG.Framework.Core
                 serviceType,
                 service);
 
-            if (service is IGameService gameService)
+            bool isNewLifecycleInstance = _lifecycleInstances.Add(service);
+
+            if (isNewLifecycleInstance)
             {
-                _lifecycleServices.Add(
-                    gameService);
+                if (service is IInitializable initializable)
+                {
+                    _initializables.Add(initializable);
+                }
+
+                if (service is IShutdownable shutdownable)
+                {
+                    _shutdownables.Add(shutdownable);
+                }
             }
         }
 
@@ -114,10 +125,10 @@ namespace ARPG.Framework.Core
                 return;
             }
 
-            foreach (IGameService service
-                     in _lifecycleServices)
+            foreach (IInitializable initializable
+                     in _initializables)
             {
-                service.Initialize();
+                initializable.Initialize();
             }
 
             _isInitialized = true;
@@ -133,16 +144,15 @@ namespace ARPG.Framework.Core
                 return;
             }
 
-            for (int index =
-                     _lifecycleServices.Count - 1;
+            for (int index = _shutdownables.Count - 1;
                  index >= 0;
                  index--)
             {
-                _lifecycleServices[index]
-                    .Shutdown();
+                _shutdownables[index].Shutdown();
             }
 
-            _lifecycleServices.Clear();
+            _initializables.Clear();
+            _shutdownables.Clear();
             _services.Clear();
 
             _isDisposed = true;
