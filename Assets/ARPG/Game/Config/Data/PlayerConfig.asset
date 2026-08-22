@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: PlayerConfig
   m_EditorClassIdentifier: 
   _maxHealth: 1500
-  _attack: 200
+  _attack: 350
   _moveSpeed: 6
