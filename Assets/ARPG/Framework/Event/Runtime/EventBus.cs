@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ARPG.Framework.Core;
 using ARPG.Framework.Diagnostics;
 
 namespace ARPG.Framework.Event
@@ -8,7 +9,7 @@ namespace ARPG.Framework.Event
     /// 强类型同步事件总线。
     /// 适用于模块之间的低频状态通知。
     /// </summary>
-    public sealed class EventBus
+    public sealed class EventBus : IShutdownable
     {
         private readonly Dictionary<Type, Delegate> _handlers = new();
 
@@ -154,6 +155,11 @@ namespace ARPG.Framework.Event
         public void ClearAll()
         {
             _handlers.Clear();
+        }
+
+        public void Shutdown()
+        {
+            ClearAll();
         }
 
         /// <summary>

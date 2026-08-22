@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ARPG.Framework.Core;
 using ARPG.Framework.Diagnostics;
 
 namespace ARPG.Framework.Timer
@@ -8,7 +9,7 @@ namespace ARPG.Framework.Timer
     /// 纯C#同步计时服务。
     /// 由外部每帧调用Tick驱动。
     /// </summary>
-    public sealed class TimerService : IDisposable
+    public sealed class TimerService : IDisposable, IShutdownable
     {
         private sealed class TimerTask
         {
@@ -279,6 +280,11 @@ namespace ARPG.Framework.Timer
 
             Clear();
             _isDisposed = true;
+        }
+
+        public void Shutdown()
+        {
+            Dispose();
         }
 
         private bool TryExecuteTask(
