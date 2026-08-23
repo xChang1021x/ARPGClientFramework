@@ -406,7 +406,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0aeb0f57428e06c43ac3476c0feb1c2c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _entrySceneName: ConfigTest
+  _entrySceneName: ServiceArchitectureTester
   _configManifest: {fileID: 11400000, guid: 64ea64661cf78b346ba5a5d688d0187c, type: 2}
 --- !u!4 &1744730165
 Transform:
