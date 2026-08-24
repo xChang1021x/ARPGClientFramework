@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using ARPG.Framework.Core;
 using ARPG.Framework.Logging;
 using UnityEngine;
@@ -69,6 +71,81 @@ namespace ARPG.Game.Resource
                 $"was not found as '{typeof(T).Name}'.");
 
             return false;
+        }
+
+        public async Task<T> LoadAsync<T>(
+    string path,
+    CancellationToken cancellationToken = default)
+    where T : UnityEngine.Object
+        {
+            ValidatePath(path);
+
+            ResourceRequest request =
+                Resources.LoadAsync<T>(path);
+
+            while (!request.isDone)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                await Task.Yield();
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            T asset =
+                request.asset as T;
+
+            if (asset == null)
+            {
+                throw new ResourceLoadException(
+                    typeof(T),
+                    path);
+            }
+
+            _logService.Debug(
+                "Resource",
+                $"Loaded resource asynchronously '{path}' " +
+                $"as '{typeof(T).Name}'.");
+
+            return asset;
+        }
+
+        public ResourceHandle<T> LoadHandle<T>(
+    string path)
+    where T : UnityEngine.Object
+        {
+            T asset =
+                Load<T>(path);
+
+            return new ResourceHandle<T>(
+                asset,
+                () => Release(asset));
+        }
+
+        public async Task<ResourceHandle<T>> LoadHandleAsync<T>(
+    string path,
+    CancellationToken cancellationToken = default)
+    where T : UnityEngine.Object
+        {
+            T asset =
+                await LoadAsync<T>(
+                    path,
+                    cancellationToken);
+
+            return new ResourceHandle<T>(
+                asset,
+                () => Release(asset));
+        }
+
+        private void Release<T>(
+    T asset)
+    where T : UnityEngine.Object
+        {
+            _logService.Debug(
+                "Resource",
+                $"Released resource handle for '{asset.name}'.");
+
+            // Resources实现暂不主动UnloadAsset。
         }
 
         public void Shutdown()

@@ -1,3 +1,5 @@
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace ARPG.Game.Resource
@@ -14,6 +16,20 @@ namespace ARPG.Game.Resource
         bool TryLoad<T>(
             string path,
             out T asset)
+            where T : Object;
+
+        Task<T> LoadAsync<T>(
+            string path,
+            CancellationToken cancellationToken = default)
+            where T : Object;
+
+        ResourceHandle<T> LoadHandle<T>(
+    string path)
+    where T : Object;
+
+        Task<ResourceHandle<T>> LoadHandleAsync<T>(
+            string path,
+            CancellationToken cancellationToken = default)
             where T : Object;
     }
 }
