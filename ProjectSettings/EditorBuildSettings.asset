@@ -17,4 +17,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/ARPG/Game/Tests/Scene/ServiceArchitectureTester.unity
     guid: d71c2754f4c2c5d47a2fe293e1c7cc96
-  m_configObjects: {}
+  - enabled: 1
+    path: Assets/ARPG/Game/Tests/Scene/ResourceServiceTest.unity
+    guid: fed941758c576de479b404ce5cca96ec
+  m_configObjects:
+    com.unity.addressableassets: {fileID: 11400000, guid: 54aa29d8de1264c47a4a6caf4e794c01,
+      type: 2}

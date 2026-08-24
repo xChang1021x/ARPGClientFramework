@@ -161,7 +161,7 @@ namespace ARPG.Game.Bootstrap
                 services.Get<LogService>();
 
             var resourceService =
-                new ResourcesResourceService(
+                new AddressablesResourceService(
                     logService);
 
             services.Register<IResourceService>(
