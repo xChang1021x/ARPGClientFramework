@@ -59,6 +59,16 @@ namespace ARPG.Game.Tests.Resource
             {
                 ReleaseHandle();
             }
+
+            if (Input.GetKeyDown(KeyCode.Alpha8))
+            {
+                TestHandle2();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Alpha9))
+            {
+                ReleaseHandle2();
+            }
         }
 
         private void TestLoad()
@@ -142,6 +152,7 @@ namespace ARPG.Game.Tests.Resource
         }
 
         private ResourceHandle<GameObject> _handle;
+        private ResourceHandle<GameObject> _handle2;
 
         private async void TestHandle()
         {
@@ -156,10 +167,29 @@ namespace ARPG.Game.Tests.Resource
                 _handle.Asset);
         }
 
+        private async void TestHandle2()
+        {
+            _handle2?.Dispose();
+
+            _handle2 =
+                await _resourceService
+                    .LoadHandleAsync<GameObject>(
+                        "ARPG/Test/ResourceTestCube");
+
+            Instantiate(
+                _handle2.Asset);
+        }
+
         private void ReleaseHandle()
         {
             _handle?.Dispose();
             _handle = null;
+        }
+
+        private void ReleaseHandle2()
+        {
+            _handle2?.Dispose();
+            _handle2 = null;
         }
     }
 }
