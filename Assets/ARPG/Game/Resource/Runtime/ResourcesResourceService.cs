@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using ARPG.Framework.Core;
@@ -16,6 +17,12 @@ namespace ARPG.Game.Resource
         : IResourceService, IShutdownable
     {
         private readonly LogService _logService;
+
+        private readonly Dictionary<ResourceKey, ResourceEntry>
+    _cache = new();
+
+        private readonly Dictionary<ResourceKey, Task<UnityEngine.Object>>
+    _loadingTasks = new();
 
         public ResourcesResourceService(
             LogService logService)
@@ -114,27 +121,176 @@ namespace ARPG.Game.Resource
     string path)
     where T : UnityEngine.Object
         {
-            T asset =
-                Load<T>(path);
+            ValidatePath(path);
 
-            return new ResourceHandle<T>(
-                asset,
-                () => Release(asset));
+            ResourceKey key =
+                new ResourceKey(
+                    typeof(T),
+                    path);
+
+            if (_cache.TryGetValue(
+                    key,
+                    out ResourceEntry existingEntry))
+            {
+                existingEntry.ReferenceCount++;
+
+                _logService.Debug(
+                    "Resource",
+                    $"Cache hit '{key}', " +
+                    $"RefCount={existingEntry.ReferenceCount}.");
+
+                return CreateHandle<T>(
+                    key,
+                    existingEntry);
+            }
+
+            T asset =
+                Resources.Load<T>(path);
+
+            if (asset == null)
+            {
+                throw new ResourceLoadException(
+                    typeof(T),
+                    path);
+            }
+
+            var entry =
+                new ResourceEntry(asset)
+                {
+                    ReferenceCount = 1
+                };
+
+            _cache.Add(
+                key,
+                entry);
+
+            _logService.Debug(
+                "Resource",
+                $"Cached '{key}', RefCount=1.");
+
+            return CreateHandle<T>(
+                key,
+                entry);
         }
 
-        public async Task<ResourceHandle<T>> LoadHandleAsync<T>(
-    string path,
-    CancellationToken cancellationToken = default)
+        private ResourceHandle<T> CreateHandle<T>(
+    ResourceKey key,
+    ResourceEntry entry)
     where T : UnityEngine.Object
         {
-            T asset =
-                await LoadAsync<T>(
-                    path,
-                    cancellationToken);
-
             return new ResourceHandle<T>(
-                asset,
-                () => Release(asset));
+                (T)entry.Asset,
+                () => Release(key));
+        }
+
+        public async Task<ResourceHandle<T>>
+    LoadHandleAsync<T>(
+        string path,
+        CancellationToken cancellationToken = default)
+    where T : UnityEngine.Object
+        {
+            ValidatePath(path);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            ResourceKey key =
+                new ResourceKey(
+                    typeof(T),
+                    path);
+
+            ResourceEntry entry =
+                await GetOrLoadEntryAsync(
+                    key);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            entry.ReferenceCount++;
+
+            _logService.Debug(
+                "Resource",
+                $"Acquired '{key}', " +
+                $"RefCount={entry.ReferenceCount}.");
+
+            return CreateHandle<T>(
+                key,
+                entry);
+        }
+
+        private async Task<UnityEngine.Object>
+    LoadAssetInternalAsync(
+        ResourceKey key)
+        {
+            ResourceRequest request =
+                Resources.LoadAsync(
+                    key.Path,
+                    key.ResourceType);
+
+            while (!request.isDone)
+            {
+                await Task.Yield();
+            }
+
+            UnityEngine.Object asset =
+                request.asset;
+
+            if (asset == null)
+            {
+                throw new ResourceLoadException(
+                    key.ResourceType,
+                    key.Path);
+            }
+
+            return asset;
+        }
+
+        private async Task<ResourceEntry>
+    GetOrLoadEntryAsync(
+        ResourceKey key)
+        {
+            if (_cache.TryGetValue(
+                    key,
+                    out ResourceEntry cachedEntry))
+            {
+                return cachedEntry;
+            }
+
+            if (!_loadingTasks.TryGetValue(
+                    key,
+                    out Task<UnityEngine.Object> loadingTask))
+            {
+                loadingTask =
+                    LoadAssetInternalAsync(key);
+
+                _loadingTasks.Add(
+                    key,
+                    loadingTask);
+            }
+
+            try
+            {
+                UnityEngine.Object asset =
+                    await loadingTask;
+
+                if (_cache.TryGetValue(
+                        key,
+                        out cachedEntry))
+                {
+                    return cachedEntry;
+                }
+
+                var newEntry =
+                    new ResourceEntry(asset);
+
+                _cache.Add(
+                    key,
+                    newEntry);
+
+                return newEntry;
+            }
+            finally
+            {
+                _loadingTasks.Remove(key);
+            }
         }
 
         private void Release<T>(
@@ -148,15 +304,82 @@ namespace ARPG.Game.Resource
             // Resources实现暂不主动UnloadAsset。
         }
 
+        private void Release(
+    ResourceKey key)
+        {
+            if (!_cache.TryGetValue(
+                    key,
+                    out ResourceEntry entry))
+            {
+                _logService.Warning(
+                    "Resource",
+                    $"Tried to release uncached resource '{key}'.");
+
+                return;
+            }
+
+            entry.ReferenceCount--;
+
+            if (entry.ReferenceCount < 0)
+            {
+                throw new InvalidOperationException(
+                    $"Resource '{key}' reference count " +
+                    "became negative.");
+            }
+
+            _logService.Debug(
+                "Resource",
+                $"Released '{key}', " +
+                $"RefCount={entry.ReferenceCount}.");
+
+            if (entry.ReferenceCount > 0)
+            {
+                return;
+            }
+
+            ReleaseEntry(
+                key,
+                entry);
+        }
+
+        private void ReleaseEntry(
+    ResourceKey key,
+    ResourceEntry entry)
+        {
+            _cache.Remove(key);
+
+            _logService.Debug(
+                "Resource",
+                $"Removed '{key}' from resource cache.");
+
+            /*
+             * Resources实现暂时不主动UnloadAsset。
+             * 真正底层释放策略将在Addressables阶段实现。
+             */
+        }
+
         public void Shutdown()
         {
-            /*
-             * 第一版暂时没有资源缓存，
-             * 因此这里没有单独资源需要释放。
-             *
-             * 后续加入缓存/Addressables后，
-             * Shutdown将承担统一Release职责。
-             */
+            foreach (KeyValuePair<
+                         ResourceKey,
+                         ResourceEntry> pair
+                     in _cache)
+            {
+                ResourceEntry entry =
+                    pair.Value;
+
+                if (entry.ReferenceCount > 0)
+                {
+                    _logService.Warning(
+                        "Resource",
+                        $"Resource '{pair.Key}' still has " +
+                        $"{entry.ReferenceCount} active references " +
+                        "during shutdown.");
+                }
+            }
+
+            _cache.Clear();
+            _loadingTasks.Clear();
         }
 
         private static void ValidatePath(
