@@ -7,6 +7,7 @@ using ARPG.Framework.Logging;
 using ARPG.Framework.Timer;
 using ARPG.Game.Config;
 using ARPG.Game.Player;
+using ARPG.Game.Resource;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using FrameworkLogger = ARPG.Framework.Logging.ILogger;
@@ -155,6 +156,16 @@ namespace ARPG.Game.Bootstrap
 
             ConfigService configService =
                 services.Get<ConfigService>();
+
+            LogService logService =
+                services.Get<LogService>();
+
+            var resourceService =
+                new ResourcesResourceService(
+                    logService);
+
+            services.Register<IResourceService>(
+                resourceService);
 
             var playerService =
                 new PlayerService(
