@@ -1,3 +1,5 @@
+using System;
+using System.Threading;
 using ARPG.Framework.Core;
 using ARPG.Game.Bootstrap;
 using ARPG.Game.Resource;
@@ -36,6 +38,26 @@ namespace ARPG.Game.Tests.Resource
             if (Input.GetKeyDown(KeyCode.Alpha3))
             {
                 TestLoadMissingResource();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Alpha4))
+            {
+                TestAsyncLoad();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Alpha5))
+            {
+                CancelAsyncLoad();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Alpha6))
+            {
+                TestHandle();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Alpha7))
+            {
+                ReleaseHandle();
             }
         }
 
@@ -77,6 +99,67 @@ namespace ARPG.Game.Tests.Resource
                     $"Expected exception: " +
                     $"{exception.Message}");
             }
+        }
+
+        private CancellationTokenSource _loadCancellation;
+
+        private async void TestAsyncLoad()
+        {
+            _loadCancellation?.Cancel();
+            _loadCancellation?.Dispose();
+
+            _loadCancellation =
+                new CancellationTokenSource();
+
+            try
+            {
+                GameObject prefab =
+                    await _resourceService
+                        .LoadAsync<GameObject>(
+                            "ARPG/Test/ResourceTestCube",
+                            _loadCancellation.Token);
+
+                Instantiate(prefab);
+
+                Debug.Log(
+                    "Async resource load succeeded.");
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.Log(
+                    "Async resource load cancelled.");
+            }
+            catch (ResourceLoadException exception)
+            {
+                Debug.LogError(
+                    exception);
+            }
+        }
+
+        private void CancelAsyncLoad()
+        {
+            _loadCancellation?.Cancel();
+        }
+
+        private ResourceHandle<GameObject> _handle;
+
+        private async void TestHandle()
+        {
+            _handle?.Dispose();
+
+            _handle =
+                await _resourceService
+                    .LoadHandleAsync<GameObject>(
+                        "ARPG/Test/ResourceTestCube");
+
+            Instantiate(
+                _handle.Asset);
+        }
+
+        private void ReleaseHandle()
+        {
+            _handle?.Dispose();
+            _handle = null;
         }
     }
 }
