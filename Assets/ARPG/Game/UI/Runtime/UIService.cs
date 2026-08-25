@@ -63,8 +63,10 @@ namespace ARPG.Game.UI
 
             try
             {
-                cancellationToken
-                    .ThrowIfCancellationRequested();
+                resourceHandle =
+                    await _resourceService
+                        .LoadAsync<GameObject>(
+                            address);
 
                 ThrowIfShutdown();
 
@@ -72,7 +74,7 @@ namespace ARPG.Game.UI
                     _uiRoot.GetLayerRoot(
                         layer);
 
-                GameObject instance =
+                instance =
                     UnityEngine.Object.Instantiate(
                         resourceHandle.Asset,
                         parent,
@@ -83,12 +85,9 @@ namespace ARPG.Game.UI
 
                 if (panel == null)
                 {
-                    UnityEngine.Object.Destroy(
-                        instance);
-
                     throw new InvalidOperationException(
                         $"UI prefab '{address}' does not " +
-                        $"contain component '{typeof(TPanel).Name}'.");
+                        $"contain component '{panelType.Name}'.");
                 }
 
                 var entry =
@@ -102,23 +101,36 @@ namespace ARPG.Game.UI
                     entry);
 
                 /*
-                 * ownership已经转移给UIEntry，
-                 * 所以不能在finally里Dispose。
+                 * ownership：
+                 *
+                 * resourceHandle
+                 * OpenInternalAsync → UIEntry
                  */
                 resourceHandle = null;
 
-                panel.Open();
+                /*
+                 * instance ownership也已经进入UIService。
+                 */
+                instance = null;
 
                 return panel;
             }
+            catch
+            {
+                if (instance != null)
+                {
+                    UnityEngine.Object.Destroy(
+                        instance);
+                }
+
+                resourceHandle?.Dispose();
+
+                throw;
+            }
             finally
             {
-                /*
-                 * 如果实例化/校验过程中发生异常，
-                 * ResourceHandle仍归当前方法所有，
-                 * 必须释放。
-                 */
-                resourceHandle?.Dispose();
+                _openingTasks.Remove(
+                    panelType);
             }
         }
 
