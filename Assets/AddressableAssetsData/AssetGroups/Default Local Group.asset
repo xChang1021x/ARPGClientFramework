@@ -17,6 +17,11 @@ MonoBehaviour:
     m_SerializedData: []
   m_GUID: ebca6dbde03befb4d888efd63fe38ac0
   m_SerializeEntries:
+  - m_GUID: 6bd3726ad87ecea4d8ad6494d35badb6
+    m_Address: ARPG/UI/MainPanel
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c0a3c9b3db3c6ee4dbcf1e1d0f98a379
     m_Address: ARPG/Test/AddressableCube
     m_ReadOnly: 0
