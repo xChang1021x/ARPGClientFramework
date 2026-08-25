@@ -8,6 +8,7 @@ using ARPG.Framework.Timer;
 using ARPG.Game.Config;
 using ARPG.Game.Player;
 using ARPG.Game.Resource;
+using ARPG.Game.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using FrameworkLogger = ARPG.Framework.Logging.ILogger;
@@ -26,6 +27,9 @@ namespace ARPG.Game.Bootstrap
 
         [SerializeField]
         private GameConfigManifest _configManifest;
+
+        [SerializeField]
+        private UIRoot _uiRoot;
 
         private static GameLauncher _instance;
 
@@ -166,6 +170,14 @@ namespace ARPG.Game.Bootstrap
 
             services.Register<IResourceService>(
                 resourceService);
+
+            var uiService =
+                new UIService(
+                    resourceService,
+                    _uiRoot);
+
+            services.Register(
+                uiService);
 
             var playerService =
                 new PlayerService(
