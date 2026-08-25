@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using ARPG.Framework.Core;
 using ARPG.Game.Bootstrap;
 using ARPG.Game.UI;
@@ -38,6 +39,11 @@ namespace ARPG.Game.Tests.UI
             {
                 _uiService.Destroy<MainPanel>();
             }
+
+            if (Input.GetKeyDown(KeyCode.Alpha4))
+            {
+                TestConcurrentOpen();
+            }
         }
 
         private async void OpenMainPanel()
@@ -45,6 +51,32 @@ namespace ARPG.Game.Tests.UI
             await _uiService.OpenAsync<MainPanel>(
                 "ARPG/UI/MainPanel",
                 UILayer.Normal);
+        }
+
+        private async void TestConcurrentOpen()
+        {
+            Task<MainPanel> taskA =
+                _uiService.OpenAsync<MainPanel>(
+                    "ARPG/UI/MainPanel",
+                    UILayer.Normal);
+
+            Task<MainPanel> taskB =
+                _uiService.OpenAsync<MainPanel>(
+                    "ARPG/UI/MainPanel",
+                    UILayer.Normal);
+
+            MainPanel[] panels =
+                await Task.WhenAll(
+                    taskA,
+                    taskB);
+
+            bool samePanel =
+                ReferenceEquals(
+                    panels[0],
+                    panels[1]);
+
+            Debug.Log(
+                $"Same panel: {samePanel}");
         }
     }
 }
