@@ -17,6 +17,9 @@ namespace ARPG.Game.UI
         private readonly Dictionary<Type, UIEntry>
             _entries = new();
 
+        private readonly Dictionary<Type, Task<UIPanel>>
+            _openingTasks = new();
+
         private bool _isShutdown;
 
         public UIService(
@@ -43,9 +46,13 @@ namespace ARPG.Game.UI
         {
             ThrowIfShutdown();
 
+            cancellationToken
+                .ThrowIfCancellationRequested();
+
             Type panelType =
                 typeof(TPanel);
 
+            // 已经创建。
             if (_entries.TryGetValue(
                     panelType,
                     out UIEntry existingEntry))
@@ -55,11 +62,53 @@ namespace ARPG.Game.UI
                 return (TPanel)existingEntry.Panel;
             }
 
-            ResourceHandle<GameObject> resourceHandle =
-                await _resourceService
-                    .LoadAsync<GameObject>(
+            Task<UIPanel> openingTask;
+
+            // 已经正在创建。
+            if (!_openingTasks.TryGetValue(
+                    panelType,
+                    out openingTask))
+            {
+                openingTask =
+                    OpenInternalAsync<TPanel>(
                         address,
-                        cancellationToken);
+                        layer);
+
+                _openingTasks.Add(
+                    panelType,
+                    openingTask);
+            }
+
+            UIPanel panel =
+                await openingTask;
+
+            /*
+             * 这里只取消当前调用者消费结果。
+             * 不取消共享Opening Task。
+             */
+            cancellationToken
+                .ThrowIfCancellationRequested();
+
+            ThrowIfShutdown();
+
+            panel.Open();
+
+            return (TPanel)panel;
+        }
+
+        private async Task<UIPanel> OpenInternalAsync<TPanel>(
+            string address,
+            UILayer layer)
+            where TPanel : UIPanel
+        {
+            Type panelType =
+                typeof(TPanel);
+
+            ResourceHandle<GameObject> resourceHandle =
+                null;
+
+            GameObject instance =
+                null;
 
             try
             {
