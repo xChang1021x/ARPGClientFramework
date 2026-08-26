@@ -46,13 +46,11 @@ namespace ARPG.Game.UI
         {
             ThrowIfShutdown();
 
-            cancellationToken
-                .ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
 
             Type panelType =
                 typeof(TPanel);
 
-            // 已经创建。
             if (_entries.TryGetValue(
                     panelType,
                     out UIEntry existingEntry))
@@ -62,38 +60,73 @@ namespace ARPG.Game.UI
                 return (TPanel)existingEntry.Panel;
             }
 
-            Task<UIPanel> openingTask;
-
-            // 已经正在创建。
             if (!_openingTasks.TryGetValue(
                     panelType,
-                    out openingTask))
+                    out Task<UIPanel> openingTask))
             {
+                var completionSource =
+                    new TaskCompletionSource<UIPanel>();
+
+                /*
+                 * 关键：
+                 * 先把in-flight状态注册进去。
+                 */
                 openingTask =
-                    OpenInternalAsync<TPanel>(
-                        address,
-                        layer);
+                    completionSource.Task;
 
                 _openingTasks.Add(
                     panelType,
                     openingTask);
+
+                /*
+                 * 注册完成后，再启动真正的创建流程。
+                 */
+                RunOpenInternalAsync<TPanel>(
+                    address,
+                    layer,
+                    panelType,
+                    completionSource);
             }
 
             UIPanel panel =
                 await openingTask;
 
-            /*
-             * 这里只取消当前调用者消费结果。
-             * 不取消共享Opening Task。
-             */
-            cancellationToken
-                .ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
 
             ThrowIfShutdown();
 
             panel.Open();
 
             return (TPanel)panel;
+        }
+
+        private async void RunOpenInternalAsync<TPanel>(
+            string address,
+            UILayer layer,
+            Type panelType,
+            TaskCompletionSource<UIPanel> completionSource)
+            where TPanel : UIPanel
+        {
+            try
+            {
+                UIPanel panel =
+                    await OpenInternalAsync<TPanel>(
+                        address,
+                        layer);
+
+                completionSource.SetResult(
+                    panel);
+            }
+            catch (Exception exception)
+            {
+                completionSource.SetException(
+                    exception);
+            }
+            finally
+            {
+                _openingTasks.Remove(
+                    panelType);
+            }
         }
 
         private async Task<UIPanel> OpenInternalAsync<TPanel>(
