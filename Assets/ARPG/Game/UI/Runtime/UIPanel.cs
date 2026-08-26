@@ -2,9 +2,17 @@ using UnityEngine;
 
 namespace ARPG.Game.UI
 {
-    public abstract class UIPanel : MonoBehaviour
+    public abstract class UIPanel
+        : MonoBehaviour
     {
         public bool IsOpen { get; private set; }
+
+        internal void InitializeClosed()
+        {
+            IsOpen = false;
+
+            gameObject.SetActive(false);
+        }
 
         internal void Open()
         {

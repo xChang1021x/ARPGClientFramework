@@ -20,6 +20,9 @@ namespace ARPG.Game.UI
         private readonly Dictionary<Type, Task<UIPanel>>
             _openingTasks = new();
 
+        private readonly Dictionary<Type, UIRequestedState>
+            _requestedStates = new();
+
         private bool _isShutdown;
 
         public UIService(
@@ -50,6 +53,9 @@ namespace ARPG.Game.UI
 
             Type panelType =
                 typeof(TPanel);
+
+            _requestedStates[panelType] =
+                UIRequestedState.Open;
 
             if (_entries.TryGetValue(
                     panelType,
@@ -94,12 +100,55 @@ namespace ARPG.Game.UI
 
             ThrowIfShutdown();
 
-            panel.Open();
+            ApplyRequestedState(
+                panelType,
+                panel);
 
             return (TPanel)panel;
         }
 
-        private async void RunOpenInternalAsync<TPanel>(
+        private void ApplyRequestedState(
+            Type panelType,
+            UIPanel panel)
+        {
+            if (!_requestedStates.TryGetValue(
+                    panelType,
+                    out UIRequestedState requestedState))
+            {
+                return;
+            }
+
+            switch (requestedState)
+            {
+                case UIRequestedState.Open:
+                    panel.Open();
+                    break;
+
+                case UIRequestedState.Closed:
+                    panel.Close();
+                    break;
+
+                case UIRequestedState.Destroyed:
+                    if (_entries.TryGetValue(
+                            panelType,
+                            out UIEntry entry))
+                    {
+                        DestroyEntry(
+                            panelType,
+                            entry);
+                    }
+
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(requestedState),
+                        requestedState,
+                        null);
+            }
+        }
+
+        private async Task RunOpenInternalAsync<TPanel>(
             string address,
             UILayer layer,
             Type panelType,
@@ -242,14 +291,18 @@ namespace ARPG.Game.UI
         {
             ThrowIfShutdown();
 
-            if (!_entries.TryGetValue(
-                    typeof(TPanel),
+            Type panelType =
+                typeof(TPanel);
+
+            _requestedStates[panelType] =
+                UIRequestedState.Closed;
+
+            if (_entries.TryGetValue(
+                    panelType,
                     out UIEntry entry))
             {
-                return;
+                entry.Panel.Close();
             }
-
-            entry.Panel.Close();
         }
 
         public void Destroy<TPanel>()
@@ -260,6 +313,9 @@ namespace ARPG.Game.UI
             Type panelType =
                 typeof(TPanel);
 
+            _requestedStates[panelType] =
+                UIRequestedState.Destroyed;
+
             if (!_entries.TryGetValue(
                     panelType,
                     out UIEntry entry))
@@ -267,11 +323,23 @@ namespace ARPG.Game.UI
                 return;
             }
 
+            DestroyEntry(
+                panelType,
+                entry);
+        }
+
+        private void DestroyEntry(
+            Type panelType,
+            UIEntry entry)
+        {
             _entries.Remove(
                 panelType);
 
-            UnityEngine.Object.Destroy(
-                entry.Panel.gameObject);
+            if (entry.Panel != null)
+            {
+                UnityEngine.Object.Destroy(
+                    entry.Panel.gameObject);
+            }
 
             entry.ResourceHandle.Dispose();
         }
@@ -301,6 +369,8 @@ namespace ARPG.Game.UI
             }
 
             _entries.Clear();
+            _openingTasks.Clear();
+            _requestedStates.Clear();
         }
 
         private void ThrowIfShutdown()
