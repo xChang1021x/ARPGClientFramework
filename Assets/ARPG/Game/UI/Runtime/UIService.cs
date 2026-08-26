@@ -81,15 +81,14 @@ namespace ARPG.Game.UI
                 /*
                  * 注册完成后，再启动真正的创建流程。
                  */
-                RunOpenInternalAsync<TPanel>(
+                _ = RunOpenInternalAsync<TPanel>(
                     address,
                     layer,
                     panelType,
                     completionSource);
             }
 
-            UIPanel panel =
-                await openingTask;
+            UIPanel panel = await openingTask;
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -171,6 +170,8 @@ namespace ARPG.Game.UI
                         $"UI prefab '{address}' does not " +
                         $"contain component '{panelType.Name}'.");
                 }
+
+                panel.InitializeClosed();
 
                 var entry =
                     new UIEntry(
