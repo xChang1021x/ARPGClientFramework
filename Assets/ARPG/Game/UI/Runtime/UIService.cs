@@ -13,10 +13,12 @@ namespace ARPG.Game.UI
     ///
     /// 负责：
     /// 1. UI异步创建；
-    /// 2. 相同UI并发Open请求合并；
+    /// 2. 并发Open请求合并；
     /// 3. UI实例生命周期；
-    /// 4. UI Prefab资源所有权；
-    /// 5. 记录并应用最新UI生命周期意图。
+    /// 4. UI资源所有权；
+    /// 5. Requested State；
+    /// 6. UI Navigation；
+    /// 7. Back行为。
     /// </summary>
     public sealed class UIService
         : IShutdownable
@@ -25,27 +27,37 @@ namespace ARPG.Game.UI
         private readonly UIRoot _uiRoot;
 
         /// <summary>
-        /// 已创建完成的UI实例。
+        /// 已经创建完成的UI。
         /// </summary>
         private readonly Dictionary<Type, UIEntry>
             _entries = new();
 
         /// <summary>
-        /// 当前正在创建中的UI。
-        ///
-        /// 用于合并相同Panel类型的并发Open请求。
+        /// 正在创建中的UI共享任务。
         /// </summary>
         private readonly Dictionary<Type, Task<UIPanel>>
             _openingTasks = new();
 
         /// <summary>
-        /// 业务对每个UI最新的生命周期意图。
-        ///
-        /// 异步创建完成后，不执行旧Open命令，
-        /// 而是应用这里保存的最新状态。
+        /// 业务对UI最新的生命周期意图。
         /// </summary>
         private readonly Dictionary<Type, UIRequestedState>
             _requestedStates = new();
+
+        /// <summary>
+        /// UI返回导航顺序。
+        ///
+        /// index 0：
+        /// 最底部。
+        ///
+        /// Count - 1：
+        /// 当前Back应优先关闭的UI。
+        ///
+        /// 使用List而不是Stack，
+        /// 是为了支持从中间移除UI。
+        /// </summary>
+        private readonly List<Type>
+            _navigationStack = new();
 
         private bool _isShutdown;
 
@@ -68,18 +80,11 @@ namespace ARPG.Game.UI
         /// <summary>
         /// 打开指定UI。
         ///
-        /// 如果已经存在：
-        /// 直接打开已有实例。
-        ///
-        /// 如果正在创建：
-        /// 共享同一个Opening Task。
-        ///
-        /// 如果不存在：
-        /// 发起一次新的异步创建。
+        /// 业务层只需要知道Panel类型，
+        /// Address / Layer / Navigation策略
+        /// 全部由UIRegistry提供。
         /// </summary>
         public async Task<TPanel> OpenAsync<TPanel>(
-            string address,
-            UILayer layer,
             CancellationToken cancellationToken = default)
             where TPanel : UIPanel
         {
@@ -91,30 +96,38 @@ namespace ARPG.Game.UI
             Type panelType =
                 typeof(TPanel);
 
+            UIConfig config =
+                UIRegistry.Get<TPanel>();
+
             /*
-             * Latest Intent：
-             * 当前业务最新希望这个UI最终处于Open状态。
+             * Latest Intent。
              */
             _requestedStates[panelType] =
                 UIRequestedState.Open;
 
             /*
-             * UI已经创建完成。
+             * 已经创建完成：
+             * 不重新加载、不重新实例化。
              */
             if (_entries.TryGetValue(
                     panelType,
                     out UIEntry existingEntry))
             {
-                existingEntry.Panel.Open();
+                OpenPanel(
+                    panelType,
+                    existingEntry);
 
                 return (TPanel)existingEntry.Panel;
             }
 
             /*
-             * UI尚未完成创建。
+             * 尚未创建。
              *
-             * 若已有Opening Task，则复用。
-             * 否则先注册占位Task，再启动创建流程。
+             * 如果已经存在共享Opening Task：
+             * 复用。
+             *
+             * 如果不存在：
+             * 创建并注册占位Task。
              */
             if (!_openingTasks.TryGetValue(
                     panelType,
@@ -124,12 +137,10 @@ namespace ARPG.Game.UI
                     new TaskCompletionSource<UIPanel>();
 
                 /*
-                 * 非常重要：
+                 * 先注册in-flight状态，
+                 * 再真正启动异步工作。
                  *
-                 * 必须先把Task注册进_openingTasks，
-                 * 再启动真正的异步创建。
-                 *
-                 * 防止底层操作同步完成时产生重入时序问题。
+                 * 避免同步完成造成重入竞态。
                  */
                 openingTask =
                     completionSource.Task;
@@ -139,8 +150,7 @@ namespace ARPG.Game.UI
                     openingTask);
 
                 _ = RunOpenInternalAsync<TPanel>(
-                    address,
-                    layer,
+                    config,
                     panelType,
                     completionSource);
             }
@@ -149,10 +159,8 @@ namespace ARPG.Game.UI
                 await openingTask;
 
             /*
-             * CancellationToken只取消当前调用方
-             * 对最终结果的消费。
-             *
-             * 不取消共享的UI创建任务。
+             * 这里只取消当前调用方消费结果。
+             * 不取消共享创建流程。
              */
             cancellationToken
                 .ThrowIfCancellationRequested();
@@ -160,8 +168,7 @@ namespace ARPG.Game.UI
             ThrowIfShutdown();
 
             /*
-             * 不执行最初的Open命令，
-             * 而是应用业务最新意图。
+             * 根据最新Requested State决定最终状态。
              */
             ApplyRequestedState(
                 panelType,
@@ -171,18 +178,10 @@ namespace ARPG.Game.UI
         }
 
         /// <summary>
-        /// 共享UI创建任务的协调层。
-        ///
-        /// 负责：
-        /// 1. 将创建结果写入TaskCompletionSource；
-        /// 2. 传播异常；
-        /// 3. 清除opening状态。
-        ///
-        /// OpenInternalAsync本身不应该操作_openingTasks。
+        /// 协调共享UI创建任务。
         /// </summary>
         private async Task RunOpenInternalAsync<TPanel>(
-            string address,
-            UILayer layer,
+            UIConfig config,
             Type panelType,
             TaskCompletionSource<UIPanel> completionSource)
             where TPanel : UIPanel
@@ -191,8 +190,7 @@ namespace ARPG.Game.UI
             {
                 UIPanel panel =
                     await OpenInternalAsync<TPanel>(
-                        address,
-                        layer);
+                        config);
 
                 completionSource.SetResult(
                     panel);
@@ -204,28 +202,23 @@ namespace ARPG.Game.UI
             }
             finally
             {
-                /*
-                 * opening生命周期只在协调层维护。
-                 */
                 _openingTasks.Remove(
                     panelType);
             }
         }
 
         /// <summary>
-        /// 真正执行UI创建。
+        /// 真正执行UI创建：
         ///
-        /// 负责：
-        /// Load Prefab
+        /// Load
         /// → Instantiate
-        /// → Validate Component
-        /// → Initialize
+        /// → Validate
+        /// → InitializeClosed
         /// → Register UIEntry
         /// → Ownership Transfer
         /// </summary>
         private async Task<UIPanel> OpenInternalAsync<TPanel>(
-            string address,
-            UILayer layer)
+            UIConfig config)
             where TPanel : UIPanel
         {
             Type panelType =
@@ -239,22 +232,16 @@ namespace ARPG.Game.UI
 
             try
             {
-                /*
-                 * UI创建任务是共享任务。
-                 *
-                 * 单个Open调用方的CancellationToken
-                 * 不能直接传递进共享Resource Load。
-                 */
                 resourceHandle =
                     await _resourceService
                         .LoadAsync<GameObject>(
-                            address);
+                            config.Address);
 
                 ThrowIfShutdown();
 
                 Transform parent =
                     _uiRoot.GetLayerRoot(
-                        layer);
+                        config.Layer);
 
                 instance =
                     UnityEngine.Object.Instantiate(
@@ -268,17 +255,14 @@ namespace ARPG.Game.UI
                 if (panel == null)
                 {
                     throw new InvalidOperationException(
-                        $"UI prefab '{address}' does not " +
+                        $"UI prefab '{config.Address}' does not " +
                         $"contain component '{panelType.Name}'.");
                 }
 
                 /*
-                 * 所有新创建Panel统一从Closed状态开始。
+                 * 创建完成后的统一基线状态：
                  *
-                 * 避免：
-                 * IsOpen == false
-                 * 但GameObject实际上Active
-                 * 的状态不一致。
+                 * Closed + inactive。
                  */
                 panel.InitializeClosed();
 
@@ -286,27 +270,23 @@ namespace ARPG.Game.UI
                     new UIEntry(
                         panel,
                         resourceHandle,
-                        layer);
+                        config);
 
                 _entries.Add(
                     panelType,
                     entry);
 
                 /*
-                 * ResourceHandle ownership：
+                 * ownership transfer：
                  *
-                 * OpenInternalAsync
-                 *      ↓
-                 * UIEntry / UIService
+                 * ResourceHandle
+                 * OpenInternalAsync → UIEntry
                  */
                 resourceHandle = null;
 
                 /*
-                 * GameObject instance ownership：
-                 *
-                 * OpenInternalAsync
-                 *      ↓
-                 * UIService
+                 * GameObject实例
+                 * OpenInternalAsync → UIService
                  */
                 instance = null;
 
@@ -314,42 +294,20 @@ namespace ARPG.Game.UI
             }
             catch
             {
-                /*
-                 * Instantiate已经成功，
-                 * 但后续步骤失败时，
-                 * 必须销毁运行时实例。
-                 */
                 if (instance != null)
                 {
                     UnityEngine.Object.Destroy(
                         instance);
                 }
 
-                /*
-                 * ResourceHandle还没有完成ownership transfer时，
-                 * 当前方法仍然负责释放。
-                 */
                 resourceHandle?.Dispose();
 
                 throw;
             }
-
-            /*
-             * 注意：
-             *
-             * 这里绝对不要再：
-             *
-             * finally
-             * {
-             *     _openingTasks.Remove(...);
-             * }
-             *
-             * opening状态属于RunOpenInternalAsync协调层。
-             */
         }
 
         /// <summary>
-        /// 将业务最新意图应用到已经创建好的Panel。
+        /// 根据业务最新意图应用实际UI状态。
         /// </summary>
         private void ApplyRequestedState(
             Type panelType,
@@ -366,13 +324,24 @@ namespace ARPG.Game.UI
             {
                 case UIRequestedState.Open:
                     {
-                        panel.Open();
+                        if (_entries.TryGetValue(
+                                panelType,
+                                out UIEntry entry))
+                        {
+                            OpenPanel(
+                                panelType,
+                                entry);
+                        }
+
                         break;
                     }
 
                 case UIRequestedState.Closed:
                     {
-                        panel.Close();
+                        ClosePanel(
+                            panelType,
+                            panel);
+
                         break;
                     }
 
@@ -401,6 +370,65 @@ namespace ARPG.Game.UI
         }
 
         /// <summary>
+        /// 统一执行Panel打开行为。
+        ///
+        /// 除了UIPanel.Open之外，
+        /// 还负责：
+        /// 1. 同Layer提升Sibling顺序；
+        /// 2. 更新Navigation Stack。
+        /// </summary>
+        private void OpenPanel(
+            Type panelType,
+            UIEntry entry)
+        {
+            entry.Panel.Open();
+
+            /*
+             * 对同一个Canvas Root下的UI，
+             * 最后Sibling优先绘制在上方。
+             */
+            entry.Panel.transform
+                .SetAsLastSibling();
+
+            if (!entry.Config.ParticipateInNavigation)
+            {
+                return;
+            }
+
+            /*
+             * 防止同一个单例Panel
+             * 在导航列表重复出现。
+             *
+             * 重新Open已有Panel时，
+             * 相当于把它提升到导航顶部。
+             */
+            _navigationStack.Remove(
+                panelType);
+
+            _navigationStack.Add(
+                panelType);
+        }
+
+        /// <summary>
+        /// 统一执行Panel关闭行为。
+        ///
+        /// Close：
+        /// 只隐藏实例，
+        /// 不释放Prefab资源。
+        ///
+        /// 同时退出当前导航。
+        /// </summary>
+        private void ClosePanel(
+            Type panelType,
+            UIPanel panel)
+        {
+            panel.Close();
+
+            _navigationStack.Remove(
+                panelType);
+        }
+
+        /// <summary>
         /// 尝试获取已经创建完成的UI。
         /// </summary>
         public bool TryGet<TPanel>(
@@ -424,10 +452,12 @@ namespace ARPG.Game.UI
         }
 
         /// <summary>
-        /// 请求关闭UI。
+        /// 关闭指定UI。
         ///
-        /// 即使Panel仍处于异步创建阶段，
-        /// Closed意图也会被记录下来。
+        /// 如果仍在Loading：
+        /// 只记录Closed意图。
+        ///
+        /// 创建完成以后会根据RequestedState保持关闭。
         /// </summary>
         public void Close<TPanel>()
             where TPanel : UIPanel
@@ -440,30 +470,18 @@ namespace ARPG.Game.UI
             _requestedStates[panelType] =
                 UIRequestedState.Closed;
 
-            /*
-             * 如果Panel已经存在，
-             * 立即应用Close。
-             *
-             * 如果还在Loading，
-             * 等创建完成后ApplyRequestedState处理。
-             */
             if (_entries.TryGetValue(
                     panelType,
                     out UIEntry entry))
             {
-                entry.Panel.Close();
+                ClosePanel(
+                    panelType,
+                    entry.Panel);
             }
         }
 
         /// <summary>
-        /// 请求销毁UI。
-        ///
-        /// 已创建：
-        /// 立即销毁实例并释放资源Handle。
-        ///
-        /// 正在创建：
-        /// 记录Destroyed意图，
-        /// 创建完成后立即Destroy。
+        /// 销毁指定UI实例，并释放它持有的Prefab资源所有权。
         /// </summary>
         public void Destroy<TPanel>()
             where TPanel : UIPanel
@@ -480,6 +498,12 @@ namespace ARPG.Game.UI
                     panelType,
                     out UIEntry entry))
             {
+                /*
+                 * 如果仍在Loading，
+                 * 保留Destroyed RequestedState。
+                 *
+                 * 创建完成后ApplyRequestedState会真正销毁。
+                 */
                 return;
             }
 
@@ -489,7 +513,68 @@ namespace ARPG.Game.UI
         }
 
         /// <summary>
-        /// 真正销毁一个已经创建完成的UIEntry。
+        /// 处理一次UI返回操作。
+        ///
+        /// 返回：
+        /// true  = 成功关闭一个可导航UI。
+        /// false = 当前没有可返回UI。
+        /// </summary>
+        public bool Back()
+        {
+            ThrowIfShutdown();
+
+            while (_navigationStack.Count > 0)
+            {
+                int lastIndex =
+                    _navigationStack.Count - 1;
+
+                Type panelType =
+                    _navigationStack[lastIndex];
+
+                /*
+                 * 如果发现stale记录，
+                 * 先清理，再继续寻找下一个。
+                 */
+                if (!_entries.TryGetValue(
+                        panelType,
+                        out UIEntry entry))
+                {
+                    _navigationStack.RemoveAt(
+                        lastIndex);
+
+                    continue;
+                }
+
+                if (!entry.Panel.IsOpen)
+                {
+                    _navigationStack.RemoveAt(
+                        lastIndex);
+
+                    continue;
+                }
+
+                _requestedStates[panelType] =
+                    UIRequestedState.Closed;
+
+                ClosePanel(
+                    panelType,
+                    entry.Panel);
+
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 真正销毁UIEntry。
+        ///
+        /// 顺序：
+        /// Registry removal
+        /// → Navigation removal
+        /// → Instance Destroy
+        /// → ResourceHandle Dispose
+        /// → Requested State cleanup
         /// </summary>
         private void DestroyEntry(
             Type panelType,
@@ -498,19 +583,23 @@ namespace ARPG.Game.UI
             _entries.Remove(
                 panelType);
 
-            /*
-             * 先销毁运行时GameObject实例。
-             */
+            _navigationStack.Remove(
+                panelType);
+
             if (entry.Panel != null)
             {
                 UnityEngine.Object.Destroy(
                     entry.Panel.gameObject);
             }
 
-            /*
-             * 再释放Prefab资源所有权。
-             */
             entry.ResourceHandle.Dispose();
+
+            /*
+             * 真正Destroyed完成以后，
+             * 当前UI已经不再有有效Requested State。
+             */
+            _requestedStates.Remove(
+                panelType);
         }
 
         public void Shutdown()
@@ -523,8 +612,9 @@ namespace ARPG.Game.UI
             _isShutdown = true;
 
             /*
-             * 统一销毁所有已经创建完成的UI实例，
-             * 并释放它们持有的Prefab ResourceHandle。
+             * 这里不能调用DestroyEntry，
+             * 因为遍历Dictionary过程中修改Dictionary
+             * 会导致枚举异常。
              */
             foreach (KeyValuePair<Type, UIEntry> pair
                      in _entries)
@@ -544,14 +634,15 @@ namespace ARPG.Game.UI
             _entries.Clear();
 
             /*
-             * Clear并不会真正取消已经运行中的Task。
+             * Clear不等于取消实际异步工作。
              *
-             * OpenInternalAsync加载完成后会通过
-             * ThrowIfShutdown进入异常cleanup。
+             * 尚未完成的OpenInternalAsync最终会在
+             * ThrowIfShutdown后进入异常cleanup。
              */
             _openingTasks.Clear();
 
             _requestedStates.Clear();
+            _navigationStack.Clear();
         }
 
         private void ThrowIfShutdown()
