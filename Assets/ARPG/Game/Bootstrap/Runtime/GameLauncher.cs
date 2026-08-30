@@ -5,6 +5,7 @@ using ARPG.Framework.Diagnostics;
 using ARPG.Framework.Event;
 using ARPG.Framework.Logging;
 using ARPG.Framework.Timer;
+using ARPG.Game.Character;
 using ARPG.Game.Config;
 using ARPG.Game.Player;
 using ARPG.Game.Resource;
@@ -170,6 +171,13 @@ namespace ARPG.Game.Bootstrap
 
             services.Register<IResourceService>(
                 resourceService);
+
+            var characterFactory =
+                new CharacterFactory(
+                    resourceService);
+
+            services.Register(
+                characterFactory);
 
             var uiService =
                 new UIService(
