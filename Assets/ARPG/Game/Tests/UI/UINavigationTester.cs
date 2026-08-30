@@ -201,7 +201,7 @@ namespace ARPG.Game.Tests.UI
                 }
 
                 bool passed =
-                    handledCount >= 0 &&
+                    handledCount == 3 &&
                     !_uiService.Back();
 
                 Debug.Log(
