@@ -28,10 +28,6 @@ namespace ARPG.Game.Tests.UI
         [SerializeField]
         private UIRoot _uiRoot;
 
-        [SerializeField]
-        private string _mainPanelAddress =
-            "ARPG/UI/MainPanel";
-
         private IResourceService _realResourceService;
 
         private DelayedResourceService _delayedResourceService;
