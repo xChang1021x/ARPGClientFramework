@@ -22,6 +22,16 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7fb2e57679124014a8b09de3be6e6767
+    m_Address: ARPG/UI/SettingsPanel
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 99adca32ae17ae440a88b0f3abed0a18
+    m_Address: ARPG/UI/ConfirmPanel
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c0a3c9b3db3c6ee4dbcf1e1d0f98a379
     m_Address: ARPG/Test/AddressableCube
     m_ReadOnly: 0

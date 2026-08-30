@@ -17,6 +17,11 @@ namespace ARPG.Game.UI
         [SerializeField]
         private Transform _overlayRoot;
 
+        public void Awake()
+        {
+            DontDestroyOnLoad(gameObject);
+        }
+
         public Transform GetLayerRoot(
             UILayer layer)
         {

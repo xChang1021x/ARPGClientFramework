@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using ARPG.Framework.Core;
 using ARPG.Game.Bootstrap;
@@ -48,35 +49,48 @@ namespace ARPG.Game.Tests.UI
 
         private async void OpenMainPanel()
         {
-            await _uiService.OpenAsync<MainPanel>(
-                "ARPG/UI/MainPanel",
-                UILayer.Normal);
+            try
+            {
+                await _uiService
+                    .OpenAsync<MainPanel>();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(
+                    exception);
+            }
         }
 
         private async void TestConcurrentOpen()
         {
-            Task<MainPanel> taskA =
-                _uiService.OpenAsync<MainPanel>(
-                    "ARPG/UI/MainPanel",
-                    UILayer.Normal);
+            try
+            {
+                Task<MainPanel> taskA =
+                    _uiService
+                        .OpenAsync<MainPanel>();
 
-            Task<MainPanel> taskB =
-                _uiService.OpenAsync<MainPanel>(
-                    "ARPG/UI/MainPanel",
-                    UILayer.Normal);
+                Task<MainPanel> taskB =
+                    _uiService
+                        .OpenAsync<MainPanel>();
 
-            MainPanel[] panels =
-                await Task.WhenAll(
-                    taskA,
-                    taskB);
+                MainPanel[] panels =
+                    await Task.WhenAll(
+                        taskA,
+                        taskB);
 
-            bool samePanel =
-                ReferenceEquals(
-                    panels[0],
-                    panels[1]);
+                bool samePanel =
+                    ReferenceEquals(
+                        panels[0],
+                        panels[1]);
 
-            Debug.Log(
-                $"Same panel: {samePanel}");
+                Debug.Log(
+                    $"Same panel: {samePanel}");
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(
+                    exception);
+            }
         }
     }
 }
