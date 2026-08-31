@@ -15,8 +15,10 @@ EditorBuildSettings:
     path: Assets/Scenes/Battle.unity
     guid: a59e56780c82d1b408ae2ee0da3ce5ca
   - enabled: 1
-    path: Assets/ARPG/Game/Tests/Scene/UIServiceTest.unity
-    guid: 1271a696e32c23e438d72692ed7a1ea6
+    path: Assets/ARPG/Game/Tests/Scene/CharacterFactoryTest.unity
+    guid: 95ec497e5451e5243a799349922ce2ac
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 54aa29d8de1264c47a4a6caf4e794c01,
       type: 2}
+    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 70f107d47437dd64cb5839b9696795f8,
+      type: 3}
