@@ -3,6 +3,7 @@ using ARPG.Framework.Core;
 using ARPG.Game.Bootstrap;
 using ARPG.Game.Character;
 using ARPG.Game.Character.Player;
+using ARPG.Game.Character.Player.Input;
 using UnityEngine;
 
 namespace ARPG.Game.Tests.Character
@@ -10,6 +11,9 @@ namespace ARPG.Game.Tests.Character
     public sealed class CharacterFactoryTester
         : MonoBehaviour
     {
+        [SerializeField]
+        private PlayerInputDriver _inputDriver;
+
         private CharacterFactory
             _characterFactory;
 
@@ -59,6 +63,9 @@ namespace ARPG.Game.Tests.Character
                             Vector3.zero,
                             Quaternion.identity);
 
+                _inputDriver.Bind(
+                    _playerHandle.Character);
+
                 Debug.Log(
                     "[Day19] Player created.");
             }
@@ -85,6 +92,7 @@ namespace ARPG.Game.Tests.Character
 
         private void OnDestroy()
         {
+            _inputDriver?.Unbind();
             _playerHandle?.Dispose();
             _playerHandle = null;
         }
