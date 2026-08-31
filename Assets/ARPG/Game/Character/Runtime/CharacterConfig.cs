@@ -9,7 +9,8 @@ namespace ARPG.Game.Character
     {
         public CharacterConfig(
             string address,
-            string displayName)
+            string displayName,
+            float moveSpeed)
         {
             if (string.IsNullOrWhiteSpace(address))
             {
@@ -25,12 +26,21 @@ namespace ARPG.Game.Character
                     nameof(displayName));
             }
 
+            if (moveSpeed < 0f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(moveSpeed));
+            }
+
             Address = address;
             DisplayName = displayName;
+            MoveSpeed = moveSpeed;
         }
 
         public string Address { get; }
 
         public string DisplayName { get; }
+
+        public float MoveSpeed { get; }
     }
 }

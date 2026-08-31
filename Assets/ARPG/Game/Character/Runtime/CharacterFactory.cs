@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using ARPG.Game.Character.Movement;
 using ARPG.Game.Resource;
 using UnityEngine;
 
@@ -32,12 +33,11 @@ namespace ARPG.Game.Character
                     nameof(resourceService));
         }
 
-        public async Task<CharacterHandle>
-            CreateAsync<TCharacter>(
-                Vector3 position,
-                Quaternion rotation,
-                Transform parent = null,
-                CancellationToken cancellationToken = default)
+        public async Task<CharacterHandle> CreateAsync<TCharacter>(
+            Vector3 position,
+            Quaternion rotation,
+            Transform parent = null,
+            CancellationToken cancellationToken = default)
             where TCharacter : CharacterEntity
         {
             cancellationToken
@@ -80,10 +80,15 @@ namespace ARPG.Game.Character
                         $"does not contain component " +
                         $"'{typeof(TCharacter).Name}'.");
                 }
+                var motor =
+                    new CharacterMotor(
+                        character.transform,
+                        config.MoveSpeed);
 
                 var context =
                     new CharacterContext(
-                        config);
+                        config,
+                        motor);
 
                 character.Initialize(
                     context);

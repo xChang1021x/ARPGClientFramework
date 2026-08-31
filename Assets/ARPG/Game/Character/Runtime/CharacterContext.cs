@@ -1,3 +1,6 @@
+using System;
+using ARPG.Game.Character.Movement;
+
 namespace ARPG.Game.Character
 {
     /// <summary>
@@ -14,11 +17,19 @@ namespace ARPG.Game.Character
     public sealed class CharacterContext
     {
         public CharacterContext(
-            CharacterConfig config)
+            CharacterConfig config,
+            CharacterMotor motor)
         {
             Config = config;
+
+            Motor =
+                motor
+                ?? throw new ArgumentNullException(
+                    nameof(motor));
         }
 
         public CharacterConfig Config { get; }
+
+        public CharacterMotor Motor { get; }
     }
 }

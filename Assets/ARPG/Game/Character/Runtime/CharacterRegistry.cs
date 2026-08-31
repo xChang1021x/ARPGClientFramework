@@ -16,7 +16,8 @@ namespace ARPG.Game.Character
                     typeof(PlayerCharacter),
                     new CharacterConfig(
                         "ARPG/Character/Player",
-                        "Player")
+                        "Player",
+                        moveSpeed: 5f)
                 }
             };
 
