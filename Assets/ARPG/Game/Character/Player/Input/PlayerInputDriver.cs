@@ -1,3 +1,4 @@
+using System;
 using ARPG.Game.Character.Movement;
 using UnityEngine;
 
@@ -24,6 +25,18 @@ namespace ARPG.Game.Character.Player.Input
         public void Bind(
             CharacterEntity character)
         {
+            if (character == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(character));
+            }
+
+            if (!character.IsInitialized)
+            {
+                throw new InvalidOperationException(
+                    "Cannot bind an uninitialized character.");
+            }
+
             _character =
                 character;
 
