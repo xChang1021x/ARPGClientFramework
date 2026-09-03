@@ -80,10 +80,22 @@ namespace ARPG.Game.Character
                         $"does not contain component " +
                         $"'{typeof(TCharacter).Name}'.");
                 }
+
+                CharacterController controller =
+                    character.GetComponent<CharacterController>();
+
+                if (controller == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Character prefab '{config.Address}' " +
+                        "does not contain a CharacterController.");
+                }
+
                 var motor =
                     new CharacterMotor(
-                        character.transform,
-                        config.MoveSpeed);
+                        controller,
+                        config.MoveSpeed,
+                        config.Gravity);
 
                 var context =
                     new CharacterContext(

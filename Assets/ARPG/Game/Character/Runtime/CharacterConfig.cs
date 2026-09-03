@@ -10,7 +10,8 @@ namespace ARPG.Game.Character
         public CharacterConfig(
             string address,
             string displayName,
-            float moveSpeed)
+            float moveSpeed,
+            float gravity)
         {
             if (string.IsNullOrWhiteSpace(address))
             {
@@ -32,9 +33,17 @@ namespace ARPG.Game.Character
                     nameof(moveSpeed));
             }
 
+            if (gravity >= 0f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(gravity),
+                    "Gravity must be negative.");
+            }
+
             Address = address;
             DisplayName = displayName;
             MoveSpeed = moveSpeed;
+            Gravity = gravity;
         }
 
         public string Address { get; }
@@ -42,5 +51,7 @@ namespace ARPG.Game.Character
         public string DisplayName { get; }
 
         public float MoveSpeed { get; }
+
+        public float Gravity { get; }
     }
 }

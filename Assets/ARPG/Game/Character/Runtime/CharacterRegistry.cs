@@ -17,7 +17,8 @@ namespace ARPG.Game.Character
                     new CharacterConfig(
                         "ARPG/Character/Player",
                         "Player",
-                        moveSpeed: 5f)
+                        moveSpeed: 5f,
+                        gravity: -20f)
                 }
             };
 
