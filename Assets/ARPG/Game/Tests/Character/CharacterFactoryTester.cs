@@ -42,6 +42,11 @@ namespace ARPG.Game.Tests.Character
             {
                 DestroyPlayer();
             }
+
+            if (Input.GetKeyDown(KeyCode.G))
+            {
+                LogCurrentState();
+            }
         }
 
         private async void CreatePlayerAsync()
@@ -60,7 +65,7 @@ namespace ARPG.Game.Tests.Character
                 _playerHandle =
                     await _characterFactory
                         .CreateAsync<PlayerCharacter>(
-                            Vector3.zero,
+                            Vector3.zero + new Vector3(0, 1, 0),
                             Quaternion.identity);
 
                 _inputDriver.Bind(
@@ -95,6 +100,26 @@ namespace ARPG.Game.Tests.Character
             _inputDriver?.Unbind();
             _playerHandle?.Dispose();
             _playerHandle = null;
+        }
+
+        private void LogCurrentState()
+        {
+            if (_playerHandle == null ||
+                _playerHandle.IsDisposed)
+            {
+                return;
+            }
+
+            CharacterEntity character =
+                _playerHandle.Character;
+
+            Type stateType =
+                character.Context
+                    .StateMachine
+                    .CurrentStateType;
+
+            Debug.Log(
+                $"[Day22] State = {stateType?.Name}");
         }
     }
 }
