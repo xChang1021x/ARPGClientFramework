@@ -2,6 +2,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ARPG.Game.Character.Movement;
+using ARPG.Game.Character.StateMachine;
+using ARPG.Game.Character.StateMachine.States;
 using ARPG.Game.Resource;
 using UnityEngine;
 
@@ -97,13 +99,20 @@ namespace ARPG.Game.Character
                         config.MoveSpeed,
                         config.Gravity);
 
+                var stateMachine =
+                    new CharacterStateMachine(
+                        motor);
+
                 var context =
                     new CharacterContext(
                         config,
-                        motor);
+                        motor,
+                        stateMachine);
 
                 character.Initialize(
                     context);
+
+                stateMachine.Start<CharacterIdleState>();
 
                 var handle =
                     new CharacterHandle(

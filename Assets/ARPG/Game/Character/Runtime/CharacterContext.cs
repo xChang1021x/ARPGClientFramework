@@ -1,24 +1,15 @@
 using System;
 using ARPG.Game.Character.Movement;
+using ARPG.Game.Character.StateMachine;
 
 namespace ARPG.Game.Character
 {
-    /// <summary>
-    /// 一个Character实例自己的运行时上下文。
-    ///
-    /// 后续会逐渐加入：
-    /// Attribute
-    /// StateMachine
-    /// Skill
-    /// Buff
-    /// Animation
-    /// 等角色级模块。
-    /// </summary>
     public sealed class CharacterContext
     {
         public CharacterContext(
             CharacterConfig config,
-            CharacterMotor motor)
+            CharacterMotor motor,
+            CharacterStateMachine stateMachine)
         {
             Config = config;
 
@@ -26,10 +17,17 @@ namespace ARPG.Game.Character
                 motor
                 ?? throw new ArgumentNullException(
                     nameof(motor));
+
+            StateMachine =
+                stateMachine
+                ?? throw new ArgumentNullException(
+                    nameof(stateMachine));
         }
 
         public CharacterConfig Config { get; }
 
         public CharacterMotor Motor { get; }
+
+        public CharacterStateMachine StateMachine { get; }
     }
 }

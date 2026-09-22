@@ -61,14 +61,14 @@ namespace ARPG.Game.Character.Player.Input
             Vector2 movement =
                 _inputReader.ReadMovement();
 
-            var intent =
+            var movementIntent =
                 new CharacterMovementIntent(
                     movement);
 
             _character.Context
-                .Motor
+                .StateMachine
                 .Tick(
-                    intent,
+                    movementIntent,
                     Time.deltaTime);
         }
     }
