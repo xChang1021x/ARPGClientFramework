@@ -4,6 +4,7 @@ using ARPG.Game.Bootstrap;
 using ARPG.Game.Character;
 using ARPG.Game.Character.Player;
 using ARPG.Game.Character.Player.Input;
+using ARPG.Game.GameCamera;
 using UnityEngine;
 
 namespace ARPG.Game.Tests.Character
@@ -13,6 +14,10 @@ namespace ARPG.Game.Tests.Character
     {
         [SerializeField]
         private PlayerInputDriver _inputDriver;
+
+        [SerializeField]
+        private ThirdPersonCameraController
+            _cameraController;
 
         private CharacterFactory
             _characterFactory;
@@ -47,6 +52,17 @@ namespace ARPG.Game.Tests.Character
             {
                 LogCurrentState();
             }
+
+            if (UnityEngine.InputSystem.Keyboard.current != null &&
+                UnityEngine.InputSystem.Keyboard.current
+                .escapeKey.wasPressedThisFrame)
+            {
+                Cursor.lockState =
+                    CursorLockMode.None;
+
+                Cursor.visible =
+                    true;
+            }
         }
 
         private async void CreatePlayerAsync()
@@ -70,6 +86,9 @@ namespace ARPG.Game.Tests.Character
 
                 _inputDriver.Bind(
                     _playerHandle.Character);
+
+                _cameraController.Bind(
+                    _playerHandle.Character.transform);
 
                 Debug.Log(
                     "[Day19] Player created.");
@@ -97,6 +116,7 @@ namespace ARPG.Game.Tests.Character
 
         private void OnDestroy()
         {
+            _cameraController?.Unbind();
             _inputDriver?.Unbind();
             _playerHandle?.Dispose();
             _playerHandle = null;
