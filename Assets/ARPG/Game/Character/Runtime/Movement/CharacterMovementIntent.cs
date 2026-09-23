@@ -3,30 +3,25 @@ using UnityEngine;
 namespace ARPG.Game.Character.Movement
 {
     /// <summary>
-    /// 描述调用方希望角色执行的移动。
-    ///
-    /// Intent只描述“想往哪里走”，
-    /// 不负责真正修改Transform。
+    /// Character的世界空间移动意图。
     /// </summary>
     public readonly struct CharacterMovementIntent
     {
         public CharacterMovementIntent(
-            Vector2 move)
+            Vector3 worldDirection)
         {
-            Move = Vector2.ClampMagnitude(
-                move,
-                1f);
+            worldDirection.y = 0f;
+
+            WorldDirection =
+                Vector3.ClampMagnitude(
+                    worldDirection,
+                    1f);
         }
 
-        /// <summary>
-        /// 输入平面：
-        ///
-        /// X = 左右
-        /// Y = 前后
-        /// </summary>
-        public Vector2 Move { get; }
+        public Vector3 WorldDirection { get; }
 
         public bool HasMovement =>
-            Move.sqrMagnitude > 0.0001f;
+            WorldDirection.sqrMagnitude >
+            0.0001f;
     }
 }
