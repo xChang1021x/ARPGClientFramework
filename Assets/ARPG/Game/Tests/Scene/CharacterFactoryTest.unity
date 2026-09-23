@@ -199,7 +199,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4269cb2e4f699b44e94a0ef27c8c2e12, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _movementCamera: {fileID: 0}
+  _movementCamera: {fileID: 1688265925}
 --- !u!1 &1605312568
 GameObject:
   m_ObjectHideFlags: 0
@@ -330,6 +330,7 @@ GameObject:
   - component: {fileID: 1688265925}
   - component: {fileID: 1688265924}
   - component: {fileID: 1688265927}
+  - component: {fileID: 1688265928}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -455,6 +456,24 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
+--- !u!114 &1688265928
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1688265923}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50f246b574c2185448f1cc8004edea0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _target: {fileID: 0}
+  _distance: 6
+  _height: 1.5
+  _sensitivity: 0.15
+  _minPitch: -30
+  _maxPitch: 70
 --- !u!1 &1745627489
 GameObject:
   m_ObjectHideFlags: 0
@@ -500,6 +519,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _inputDriver: {fileID: 1550893838}
+  _cameraController: {fileID: 1688265928}
 --- !u!1 &2143067373
 GameObject:
   m_ObjectHideFlags: 0
