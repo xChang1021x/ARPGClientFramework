@@ -4,23 +4,40 @@ using UnityEngine;
 
 namespace ARPG.Game.Character.Player.Input
 {
-    /// <summary>
-    /// Unity Update边界。
-    ///
-    /// 负责：
-    /// PlayerInputReader
-    /// →
-    /// CharacterMovementIntent
-    /// →
-    /// CharacterMotor.Tick。
-    ///
-    /// 不直接修改Transform。
-    /// </summary>
     public sealed class PlayerInputDriver
         : MonoBehaviour
     {
+        [SerializeField]
+        private Camera _movementCamera;
+
         private PlayerInputReader _inputReader;
+
+        private PlayerMovementIntentBuilder
+            _movementIntentBuilder;
+
         private CharacterEntity _character;
+
+        private void Awake()
+        {
+            if (_movementCamera == null)
+            {
+                _movementCamera =
+                    Camera.main;
+            }
+
+            if (_movementCamera == null)
+            {
+                throw new InvalidOperationException(
+                    "Player movement camera is missing.");
+            }
+
+            _inputReader =
+                new PlayerInputReader();
+
+            _movementIntentBuilder =
+                new PlayerMovementIntentBuilder(
+                    _movementCamera.transform);
+        }
 
         public void Bind(
             CharacterEntity character)
@@ -39,9 +56,6 @@ namespace ARPG.Game.Character.Player.Input
 
             _character =
                 character;
-
-            _inputReader ??=
-                new PlayerInputReader();
         }
 
         public void Unbind()
@@ -58,12 +72,12 @@ namespace ARPG.Game.Character.Player.Input
                 return;
             }
 
-            Vector2 movement =
+            Vector2 input =
                 _inputReader.ReadMovement();
 
-            var movementIntent =
-                new CharacterMovementIntent(
-                    movement);
+            CharacterMovementIntent movementIntent =
+                _movementIntentBuilder.Build(
+                    input);
 
             _character.Context
                 .StateMachine
