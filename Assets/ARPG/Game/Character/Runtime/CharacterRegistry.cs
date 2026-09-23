@@ -18,7 +18,8 @@ namespace ARPG.Game.Character
                         "ARPG/Character/Player",
                         "Player",
                         moveSpeed: 5f,
-                        gravity: -20f)
+                        gravity: -20f,
+                        rotationSpeed: 720f)
                 }
             };
 

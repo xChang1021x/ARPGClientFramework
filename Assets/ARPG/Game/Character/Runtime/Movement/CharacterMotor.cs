@@ -31,7 +31,8 @@ namespace ARPG.Game.Character.Movement
         public CharacterMotor(
             CharacterController controller,
             float moveSpeed,
-            float gravity)
+            float gravity,
+            float rotationSpeed)
         {
             _controller =
                 controller
@@ -51,13 +52,22 @@ namespace ARPG.Game.Character.Movement
                     nameof(gravity));
             }
 
+            if (rotationSpeed < 0f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(rotationSpeed));
+            }
+
             MoveSpeed = moveSpeed;
             Gravity = gravity;
+            RotationSpeed = rotationSpeed;
         }
 
         public float MoveSpeed { get; }
 
         public float Gravity { get; }
+
+        public float RotationSpeed { get; }
 
         public bool IsGrounded =>
             _controller.isGrounded;
@@ -74,6 +84,10 @@ namespace ARPG.Game.Character.Movement
                 throw new ArgumentOutOfRangeException(
                     nameof(deltaTime));
             }
+
+            UpdateRotation(
+                intent,
+                deltaTime);
 
             UpdateVerticalVelocity(
                 deltaTime);
@@ -98,13 +112,7 @@ namespace ARPG.Game.Character.Movement
                 return Vector3.zero;
             }
 
-            Vector3 direction =
-                new Vector3(
-                    intent.Move.x,
-                    0f,
-                    intent.Move.y);
-
-            return direction *
+            return intent.WorldDirection *
                    MoveSpeed;
         }
 
@@ -129,6 +137,33 @@ namespace ARPG.Game.Character.Movement
 
             _verticalVelocity +=
                 Gravity * deltaTime;
+        }
+
+        private void UpdateRotation(
+            CharacterMovementIntent intent,
+            float deltaTime)
+        {
+            if (!intent.HasMovement)
+            {
+                return;
+            }
+
+            Vector3 direction =
+                intent.WorldDirection;
+
+            Quaternion targetRotation =
+                Quaternion.LookRotation(
+                    direction,
+                    Vector3.up);
+
+            Transform transform =
+                _controller.transform;
+
+            transform.rotation =
+                Quaternion.RotateTowards(
+                    transform.rotation,
+                    targetRotation,
+                    RotationSpeed * deltaTime);
         }
     }
 }

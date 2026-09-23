@@ -97,7 +97,8 @@ namespace ARPG.Game.Character
                     new CharacterMotor(
                         controller,
                         config.MoveSpeed,
-                        config.Gravity);
+                        config.Gravity,
+                        config.RotationSpeed);
 
                 var stateMachine =
                     new CharacterStateMachine(
