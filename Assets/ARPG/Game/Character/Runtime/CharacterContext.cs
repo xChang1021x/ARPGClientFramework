@@ -2,6 +2,7 @@ using System;
 using ARPG.Game.Character.Attribute;
 using ARPG.Game.Character.Movement;
 using ARPG.Game.Character.StateMachine;
+using ARPG.Game.Combat.Character;
 
 namespace ARPG.Game.Character
 {
@@ -11,7 +12,8 @@ namespace ARPG.Game.Character
             CharacterConfig config,
             CharacterMotor motor,
             CharacterStateMachine stateMachine,
-            CharacterHealth health)
+            CharacterHealth health,
+            CharacterDamageReceiver damageReceiver)
         {
             Config = config;
 
@@ -29,6 +31,11 @@ namespace ARPG.Game.Character
                 health
                 ?? throw new ArgumentNullException(
                     nameof(health));
+
+            DamageReceiver =
+                damageReceiver
+                ?? throw new ArgumentNullException(
+                    nameof(damageReceiver));
         }
 
         public CharacterConfig Config { get; }
@@ -38,5 +45,7 @@ namespace ARPG.Game.Character
         public CharacterStateMachine StateMachine { get; }
 
         public CharacterHealth Health { get; }
+
+        public CharacterDamageReceiver DamageReceiver { get; }
     }
 }

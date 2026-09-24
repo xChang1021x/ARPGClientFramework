@@ -20,7 +20,8 @@ namespace ARPG.Game.Character
                         moveSpeed: 5f,
                         gravity: -20f,
                         rotationSpeed: 720f,
-                        maxHealth: 100)
+                        maxHealth: 100,
+                        hitRecoveryDuration: 0.2f)
                 }
             };
 

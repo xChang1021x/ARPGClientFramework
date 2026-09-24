@@ -13,7 +13,8 @@ namespace ARPG.Game.Character
             float moveSpeed,
             float gravity,
             float rotationSpeed,
-            int maxHealth)
+            int maxHealth,
+            float hitRecoveryDuration)
         {
             if (string.IsNullOrWhiteSpace(address))
             {
@@ -54,12 +55,19 @@ namespace ARPG.Game.Character
                     nameof(maxHealth));
             }
 
+            if (hitRecoveryDuration < 0f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(hitRecoveryDuration));
+            }
+
             Address = address;
             DisplayName = displayName;
             MoveSpeed = moveSpeed;
             Gravity = gravity;
             RotationSpeed = rotationSpeed;
             MaxHealth = maxHealth;
+            HitRecoveryDuration = hitRecoveryDuration;
         }
 
         public string Address { get; }
@@ -73,5 +81,7 @@ namespace ARPG.Game.Character
         public float RotationSpeed { get; }
 
         public int MaxHealth { get; }
+
+        public float HitRecoveryDuration { get; }
     }
 }

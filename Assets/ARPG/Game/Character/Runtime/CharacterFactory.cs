@@ -5,6 +5,8 @@ using ARPG.Game.Character.Attribute;
 using ARPG.Game.Character.Movement;
 using ARPG.Game.Character.StateMachine;
 using ARPG.Game.Character.StateMachine.States;
+using ARPG.Game.Combat.Character;
+using ARPG.Game.Combat.Damage;
 using ARPG.Game.Resource;
 using UnityEngine;
 
@@ -107,14 +109,25 @@ namespace ARPG.Game.Character
 
                 var stateMachine =
                     new CharacterStateMachine(
-                        motor);
+                        motor,
+                        config.HitRecoveryDuration);
+
+                var damageResolver =
+                    new DamageResolver();
+
+                var damageReceiver =
+                    new CharacterDamageReceiver(
+                        health,
+                        stateMachine,
+                        damageResolver);
 
                 var context =
                     new CharacterContext(
                         config,
                         motor,
                         stateMachine,
-                        health);
+                        health,
+                        damageReceiver);
 
                 character.Initialize(
                     context);
