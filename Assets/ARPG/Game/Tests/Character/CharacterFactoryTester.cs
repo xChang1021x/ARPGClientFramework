@@ -107,11 +107,14 @@ namespace ARPG.Game.Tests.Character
                 return;
             }
 
+            _cameraController?.Unbind();
+            _inputDriver?.Unbind();
+
             _playerHandle.Dispose();
             _playerHandle = null;
 
             Debug.Log(
-                "[Day19] Player destroyed.");
+                "[Day24] Player destroyed.");
         }
 
         private void OnDestroy()
