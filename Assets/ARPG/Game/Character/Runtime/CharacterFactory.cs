@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using ARPG.Game.Character.Attribute;
 using ARPG.Game.Character.Movement;
 using ARPG.Game.Character.StateMachine;
 using ARPG.Game.Character.StateMachine.States;
@@ -100,6 +101,10 @@ namespace ARPG.Game.Character
                         config.Gravity,
                         config.RotationSpeed);
 
+                var health =
+                    new CharacterHealth(
+                        config.MaxHealth);
+
                 var stateMachine =
                     new CharacterStateMachine(
                         motor);
@@ -108,7 +113,8 @@ namespace ARPG.Game.Character
                     new CharacterContext(
                         config,
                         motor,
-                        stateMachine);
+                        stateMachine,
+                        health);
 
                 character.Initialize(
                     context);

@@ -19,7 +19,8 @@ namespace ARPG.Game.Character
                         "Player",
                         moveSpeed: 5f,
                         gravity: -20f,
-                        rotationSpeed: 720f)
+                        rotationSpeed: 720f,
+                        maxHealth: 100)
                 }
             };
 

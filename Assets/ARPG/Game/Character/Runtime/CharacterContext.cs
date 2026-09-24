@@ -1,4 +1,5 @@
 using System;
+using ARPG.Game.Character.Attribute;
 using ARPG.Game.Character.Movement;
 using ARPG.Game.Character.StateMachine;
 
@@ -9,7 +10,8 @@ namespace ARPG.Game.Character
         public CharacterContext(
             CharacterConfig config,
             CharacterMotor motor,
-            CharacterStateMachine stateMachine)
+            CharacterStateMachine stateMachine,
+            CharacterHealth health)
         {
             Config = config;
 
@@ -22,6 +24,11 @@ namespace ARPG.Game.Character
                 stateMachine
                 ?? throw new ArgumentNullException(
                     nameof(stateMachine));
+
+            Health =
+                health
+                ?? throw new ArgumentNullException(
+                    nameof(health));
         }
 
         public CharacterConfig Config { get; }
@@ -29,5 +36,7 @@ namespace ARPG.Game.Character
         public CharacterMotor Motor { get; }
 
         public CharacterStateMachine StateMachine { get; }
+
+        public CharacterHealth Health { get; }
     }
 }
