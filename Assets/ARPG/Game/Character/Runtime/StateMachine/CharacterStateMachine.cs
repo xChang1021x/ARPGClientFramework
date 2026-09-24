@@ -27,7 +27,8 @@ namespace ARPG.Game.Character.StateMachine
         private ICharacterState _currentState;
 
         public CharacterStateMachine(
-            CharacterMotor motor)
+            CharacterMotor motor,
+            float hitRecoveryDuration)
         {
             if (motor == null)
             {
@@ -48,6 +49,16 @@ namespace ARPG.Game.Character.StateMachine
             Register(
                 new CharacterFallState(
                     this,
+                    motor));
+
+            Register(
+                new CharacterHitState(
+                    this,
+                    motor,
+                    hitRecoveryDuration));
+
+            Register(
+                new CharacterDeadState(
                     motor));
         }
 
@@ -135,6 +146,33 @@ namespace ARPG.Game.Character.StateMachine
                     $"Character state '{stateType.Name}' " +
                     "has already been registered.");
             }
+        }
+
+        public void RestartState<TState>()
+            where TState : class, ICharacterState
+        {
+            Type targetType =
+                typeof(TState);
+
+            if (!_states.TryGetValue(
+                    targetType,
+                    out ICharacterState targetState))
+            {
+                throw new InvalidOperationException(
+                    $"Character state '{targetType.Name}' " +
+                    "has not been registered.");
+            }
+
+            if (!ReferenceEquals(
+                    _currentState,
+                    targetState))
+            {
+                ChangeState<TState>();
+                return;
+            }
+
+            _currentState.Exit();
+            _currentState.Enter();
         }
     }
 }
