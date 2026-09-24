@@ -4,6 +4,7 @@ using ARPG.Game.Bootstrap;
 using ARPG.Game.Character;
 using ARPG.Game.Character.Player;
 using ARPG.Game.Character.Player.Input;
+using ARPG.Game.Combat.Damage;
 using ARPG.Game.GameCamera;
 using UnityEngine;
 
@@ -24,6 +25,10 @@ namespace ARPG.Game.Tests.Character
 
         private CharacterHandle
             _playerHandle;
+
+        private readonly DamageRequest
+            _normalDamage =
+                new DamageRequest(20);
 
         private void Awake()
         {
@@ -51,6 +56,16 @@ namespace ARPG.Game.Tests.Character
             if (Input.GetKeyDown(KeyCode.G))
             {
                 LogCurrentState();
+            }
+
+            if (Input.GetKeyDown(KeyCode.H))
+            {
+                ApplyTestDamage(20);
+            }
+
+            if (Input.GetKeyDown(KeyCode.J))
+            {
+                ApplyTestDamage(999);
             }
 
             if (UnityEngine.InputSystem.Keyboard.current != null &&
@@ -143,6 +158,33 @@ namespace ARPG.Game.Tests.Character
 
             Debug.Log(
                 $"[Day22] State = {stateType?.Name}");
+        }
+
+        private void ApplyTestDamage(
+            int damage)
+        {
+            if (_playerHandle == null ||
+                _playerHandle.IsDisposed)
+            {
+                return;
+            }
+
+            CharacterEntity character =
+                _playerHandle.Character;
+
+            DamageResult result =
+                character.Context
+                    .DamageReceiver
+                    .Receive(
+                        new DamageRequest(
+                            damage));
+
+            Debug.Log(
+                $"Damage={result.AppliedDamage}, " +
+                $"HP={result.RemainingHealth}, " +
+                $"Killed={result.Killed}, " +
+                $"State=" +
+                $"{character.Context.StateMachine.CurrentStateType?.Name}");
         }
     }
 }
