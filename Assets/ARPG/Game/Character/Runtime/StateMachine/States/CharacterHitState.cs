@@ -1,4 +1,5 @@
 using System;
+using ARPG.Game.Character.Control;
 using ARPG.Game.Character.Movement;
 
 namespace ARPG.Game.Character.StateMachine.States
@@ -56,7 +57,7 @@ namespace ARPG.Game.Character.StateMachine.States
         }
 
         public void Tick(
-            CharacterMovementIntent movementIntent,
+            CharacterControlIntent intent,
             float deltaTime)
         {
             /*
@@ -87,7 +88,7 @@ namespace ARPG.Game.Character.StateMachine.States
                 return;
             }
 
-            if (movementIntent.HasMovement)
+            if (intent.Movement.HasMovement)
             {
                 _stateMachine
                     .ChangeState<CharacterMoveState>();

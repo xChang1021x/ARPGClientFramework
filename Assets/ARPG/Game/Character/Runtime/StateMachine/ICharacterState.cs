@@ -1,4 +1,4 @@
-using ARPG.Game.Character.Movement;
+using ARPG.Game.Character.Control;
 
 namespace ARPG.Game.Character.StateMachine
 {
@@ -16,7 +16,7 @@ namespace ARPG.Game.Character.StateMachine
         void Enter();
 
         void Tick(
-            CharacterMovementIntent movementIntent,
+            CharacterControlIntent intent,
             float deltaTime);
 
         void Exit();

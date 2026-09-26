@@ -1,4 +1,5 @@
 using System;
+using ARPG.Game.Character.Control;
 using ARPG.Game.Character.Movement;
 
 namespace ARPG.Game.Character.StateMachine.States
@@ -35,7 +36,7 @@ namespace ARPG.Game.Character.StateMachine.States
         }
 
         public void Tick(
-            CharacterMovementIntent movementIntent,
+            CharacterControlIntent intent,
             float deltaTime)
         {
             _motor.Tick(

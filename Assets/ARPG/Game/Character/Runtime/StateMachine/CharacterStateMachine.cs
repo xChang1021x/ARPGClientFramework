@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ARPG.Game.Character.Control;
 using ARPG.Game.Character.Movement;
 using ARPG.Game.Character.StateMachine.States;
 
@@ -28,7 +29,8 @@ namespace ARPG.Game.Character.StateMachine
 
         public CharacterStateMachine(
             CharacterMotor motor,
-            float hitRecoveryDuration)
+            float hitRecoveryDuration,
+            float attackDuration)
         {
             if (motor == null)
             {
@@ -60,6 +62,12 @@ namespace ARPG.Game.Character.StateMachine
             Register(
                 new CharacterDeadState(
                     motor));
+
+            Register(
+                new CharacterAttackState(
+                    this,
+                    motor,
+                    attackDuration));
         }
 
         public ICharacterState CurrentState =>
@@ -81,7 +89,7 @@ namespace ARPG.Game.Character.StateMachine
         }
 
         public void Tick(
-            CharacterMovementIntent movementIntent,
+            CharacterControlIntent intent,
             float deltaTime)
         {
             if (_currentState == null)
@@ -91,7 +99,7 @@ namespace ARPG.Game.Character.StateMachine
             }
 
             _currentState.Tick(
-                movementIntent,
+                intent,
                 deltaTime);
         }
 

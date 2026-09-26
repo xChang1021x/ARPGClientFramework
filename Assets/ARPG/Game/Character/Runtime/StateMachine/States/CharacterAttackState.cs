@@ -4,16 +4,13 @@ using ARPG.Game.Character.Movement;
 
 namespace ARPG.Game.Character.StateMachine.States
 {
-    /// <summary>
-    /// Character站立状态。
-    /// </summary>
-    public sealed class CharacterIdleState
+    public sealed class CharacterAttackState
         : ICharacterState
     {
         private static readonly CharacterMovementIntent
             NoMovement =
                 new CharacterMovementIntent(
-                    UnityEngine.Vector2.zero);
+                    UnityEngine.Vector3.zero);
 
         private readonly CharacterStateMachine
             _stateMachine;
@@ -21,9 +18,14 @@ namespace ARPG.Game.Character.StateMachine.States
         private readonly CharacterMotor
             _motor;
 
-        public CharacterIdleState(
+        private readonly float _duration;
+
+        private float _elapsedTime;
+
+        public CharacterAttackState(
             CharacterStateMachine stateMachine,
-            CharacterMotor motor)
+            CharacterMotor motor,
+            float duration)
         {
             _stateMachine =
                 stateMachine
@@ -34,10 +36,20 @@ namespace ARPG.Game.Character.StateMachine.States
                 motor
                 ?? throw new ArgumentNullException(
                     nameof(motor));
+
+            if (duration <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(duration));
+            }
+
+            _duration =
+                duration;
         }
 
         public void Enter()
         {
+            _elapsedTime = 0f;
         }
 
         public void Tick(
@@ -45,16 +57,21 @@ namespace ARPG.Game.Character.StateMachine.States
             float deltaTime)
         {
             /*
-             * 即使Idle也必须Tick Motor，
-             * 因为Gravity不能停止。
+             * 第一版普通攻击锁定水平移动，
+             * 但依然保留重力。
              */
             _motor.Tick(
                 NoMovement,
                 deltaTime);
 
-            /*
-             * 优先处理离地。
-             */
+            _elapsedTime +=
+                deltaTime;
+
+            if (_elapsedTime < _duration)
+            {
+                return;
+            }
+
             if (!_motor.IsGrounded)
             {
                 _stateMachine
@@ -63,17 +80,16 @@ namespace ARPG.Game.Character.StateMachine.States
                 return;
             }
 
-            if (intent.AttackPressed)
-            {
-                _stateMachine.ChangeState<CharacterAttackState>();
-                return;
-            }
-
             if (intent.Movement.HasMovement)
             {
                 _stateMachine
                     .ChangeState<CharacterMoveState>();
+
+                return;
             }
+
+            _stateMachine
+                .ChangeState<CharacterIdleState>();
         }
 
         public void Exit()
