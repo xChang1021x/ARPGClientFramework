@@ -71,5 +71,21 @@ namespace ARPG.Game.Character.Player.Input
                 movement,
                 1f);
         }
+
+        public bool ReadAttackPressed()
+        {
+            bool mouseAttack =
+                Mouse.current != null &&
+                Mouse.current.leftButton
+                    .wasPressedThisFrame;
+
+            bool gamepadAttack =
+                Gamepad.current != null &&
+                Gamepad.current.buttonWest
+                    .wasPressedThisFrame;
+
+            return mouseAttack ||
+                   gamepadAttack;
+        }
     }
 }

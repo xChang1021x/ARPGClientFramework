@@ -110,7 +110,8 @@ namespace ARPG.Game.Character
                 var stateMachine =
                     new CharacterStateMachine(
                         motor,
-                        config.HitRecoveryDuration);
+                        config.HitRecoveryDuration,
+                        config.AttackDuration);
 
                 var damageResolver =
                     new DamageResolver();

@@ -1,4 +1,5 @@
 using System;
+using ARPG.Game.Character.Control;
 using ARPG.Game.Character.Movement;
 using UnityEngine;
 
@@ -72,17 +73,25 @@ namespace ARPG.Game.Character.Player.Input
                 return;
             }
 
-            Vector2 input =
+            Vector2 movementInput =
                 _inputReader.ReadMovement();
 
             CharacterMovementIntent movementIntent =
                 _movementIntentBuilder.Build(
-                    input);
+                    movementInput);
+
+            bool attackPressed =
+                _inputReader.ReadAttackPressed();
+
+            var intent =
+                new CharacterControlIntent(
+                    movementIntent,
+                    attackPressed);
 
             _character.Context
                 .StateMachine
                 .Tick(
-                    movementIntent,
+                    intent,
                     Time.deltaTime);
         }
     }
