@@ -42,6 +42,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ee97a68bb54461d49a4613de58045e6d
+    m_Address: ARPG/Character/Dummy
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 8ea37d8b37c1a8c4dabe2d1e566669bf, type: 2}
   m_SchemaSet:
