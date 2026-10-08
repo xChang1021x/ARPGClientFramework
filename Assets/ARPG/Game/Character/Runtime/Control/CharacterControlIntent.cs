@@ -10,6 +10,13 @@ namespace ARPG.Game.Character.Control
     /// </summary>
     public readonly struct CharacterControlIntent
     {
+        public static readonly
+            CharacterControlIntent None =
+                new CharacterControlIntent(
+                    new CharacterMovementIntent(
+                        UnityEngine.Vector3.zero),
+                    false);
+
         public CharacterControlIntent(
             CharacterMovementIntent movement,
             bool attackPressed)

@@ -32,6 +32,9 @@ namespace ARPG.Game.Bootstrap
         [SerializeField]
         private UIRoot _uiRoot;
 
+        [SerializeField]
+        private LayerMask _characterTargetLayerMask;
+
         private static GameLauncher _instance;
 
         public static GameLauncher Instance
@@ -174,7 +177,8 @@ namespace ARPG.Game.Bootstrap
 
             var characterFactory =
                 new CharacterFactory(
-                    resourceService);
+                    resourceService,
+                    _characterTargetLayerMask);
 
             services.Register(
                 characterFactory);
