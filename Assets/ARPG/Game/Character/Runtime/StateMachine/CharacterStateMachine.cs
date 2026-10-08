@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ARPG.Game.Character.Control;
 using ARPG.Game.Character.Movement;
 using ARPG.Game.Character.StateMachine.States;
+using ARPG.Game.Combat.Attack;
 
 namespace ARPG.Game.Character.StateMachine
 {
@@ -29,8 +30,10 @@ namespace ARPG.Game.Character.StateMachine
 
         public CharacterStateMachine(
             CharacterMotor motor,
+            CharacterAttackExecutor attackExecutor,
             float hitRecoveryDuration,
-            float attackDuration)
+            float attackDuration,
+            float attackHitTime)
         {
             if (motor == null)
             {
@@ -67,7 +70,9 @@ namespace ARPG.Game.Character.StateMachine
                 new CharacterAttackState(
                     this,
                     motor,
-                    attackDuration));
+                    attackExecutor,
+                    attackDuration,
+                    attackHitTime));
         }
 
         public ICharacterState CurrentState =>

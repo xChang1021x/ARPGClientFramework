@@ -1,6 +1,7 @@
 using System;
 using ARPG.Game.Character.Control;
 using ARPG.Game.Character.Movement;
+using ARPG.Game.Combat.Attack;
 
 namespace ARPG.Game.Character.StateMachine.States
 {
@@ -22,11 +23,22 @@ namespace ARPG.Game.Character.StateMachine.States
 
         private float _elapsedTime;
 
+        private readonly CharacterAttackExecutor
+    _attackExecutor;
+
+        private readonly float _hitTime;
+
+        private bool _hasExecutedHit;
+
         public CharacterAttackState(
             CharacterStateMachine stateMachine,
             CharacterMotor motor,
-            float duration)
+            CharacterAttackExecutor attackExecutor,
+            float duration,
+            float hitTime)
         {
+
+
             _stateMachine =
                 stateMachine
                 ?? throw new ArgumentNullException(
@@ -37,6 +49,11 @@ namespace ARPG.Game.Character.StateMachine.States
                 ?? throw new ArgumentNullException(
                     nameof(motor));
 
+            _attackExecutor =
+                attackExecutor
+                ?? throw new ArgumentNullException(
+                    nameof(attackExecutor));
+
             if (duration <= 0f)
             {
                 throw new ArgumentOutOfRangeException(
@@ -45,11 +62,21 @@ namespace ARPG.Game.Character.StateMachine.States
 
             _duration =
                 duration;
+
+            if (hitTime < 0f ||
+                hitTime > duration)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(hitTime));
+            }
+
+            _hitTime = hitTime;
         }
 
         public void Enter()
         {
             _elapsedTime = 0f;
+            _hasExecutedHit = false;
         }
 
         public void Tick(
@@ -66,6 +93,14 @@ namespace ARPG.Game.Character.StateMachine.States
 
             _elapsedTime +=
                 deltaTime;
+
+            if (!_hasExecutedHit &&
+                _elapsedTime >= _hitTime)
+            {
+                _hasExecutedHit = true;
+
+                _attackExecutor.Execute();
+            }
 
             if (_elapsedTime < _duration)
             {

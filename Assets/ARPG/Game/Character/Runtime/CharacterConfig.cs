@@ -15,7 +15,11 @@ namespace ARPG.Game.Character
             float rotationSpeed,
             int maxHealth,
             float hitRecoveryDuration,
-            float attackDuration)
+            int attackDamage,
+            float attackDuration,
+            float attackHitTime,
+            float attackRange,
+            float attackRadius)
         {
             if (string.IsNullOrWhiteSpace(address))
             {
@@ -68,6 +72,31 @@ namespace ARPG.Game.Character
                     nameof(attackDuration));
             }
 
+            if (attackDamage <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(attackDamage));
+            }
+
+            if (attackHitTime < 0f ||
+                attackHitTime > attackDuration)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(attackHitTime));
+            }
+
+            if (attackRange < 0f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(attackRange));
+            }
+
+            if (attackRadius <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(attackRadius));
+            }
+
             Address = address;
             DisplayName = displayName;
             MoveSpeed = moveSpeed;
@@ -76,6 +105,10 @@ namespace ARPG.Game.Character
             MaxHealth = maxHealth;
             HitRecoveryDuration = hitRecoveryDuration;
             AttackDuration = attackDuration;
+            AttackDamage = attackDamage;
+            AttackHitTime = attackHitTime;
+            AttackRange = attackRange;
+            AttackRadius = attackRadius;
         }
 
         public string Address { get; }
@@ -93,5 +126,13 @@ namespace ARPG.Game.Character
         public float HitRecoveryDuration { get; }
 
         public float AttackDuration { get; }
+
+        public int AttackDamage { get; }
+
+        public float AttackHitTime { get; }
+
+        public float AttackRange { get; }
+
+        public float AttackRadius { get; }
     }
 }

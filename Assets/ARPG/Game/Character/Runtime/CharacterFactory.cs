@@ -5,6 +5,7 @@ using ARPG.Game.Character.Attribute;
 using ARPG.Game.Character.Movement;
 using ARPG.Game.Character.StateMachine;
 using ARPG.Game.Character.StateMachine.States;
+using ARPG.Game.Combat.Attack;
 using ARPG.Game.Combat.Character;
 using ARPG.Game.Combat.Damage;
 using ARPG.Game.Resource;
@@ -29,13 +30,20 @@ namespace ARPG.Game.Character
         private readonly IResourceService
             _resourceService;
 
+        private readonly LayerMask
+            _targetLayerMask;
+
         public CharacterFactory(
-            IResourceService resourceService)
+            IResourceService resourceService,
+            LayerMask targetLayerMask)
         {
             _resourceService =
                 resourceService
                 ?? throw new ArgumentNullException(
                     nameof(resourceService));
+
+            _targetLayerMask =
+                targetLayerMask;
         }
 
         public async Task<CharacterHandle> CreateAsync<TCharacter>(
@@ -107,11 +115,21 @@ namespace ARPG.Game.Character
                     new CharacterHealth(
                         config.MaxHealth);
 
+                var attackExecutor =
+                    new CharacterAttackExecutor(
+                        character,
+                        config.AttackDamage,
+                        config.AttackRange,
+                        config.AttackRadius,
+                        _targetLayerMask);
+
                 var stateMachine =
                     new CharacterStateMachine(
                         motor,
+                        attackExecutor,
                         config.HitRecoveryDuration,
-                        config.AttackDuration);
+                        config.AttackDuration,
+                        config.AttackHitTime);
 
                 var damageResolver =
                     new DamageResolver();

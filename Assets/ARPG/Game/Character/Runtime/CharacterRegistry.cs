@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ARPG.Game.Character.Player;
+using ARPG.Game.Character.TrainingDummy;
 
 namespace ARPG.Game.Character
 {
@@ -22,7 +23,27 @@ namespace ARPG.Game.Character
                         rotationSpeed: 720f,
                         maxHealth: 100,
                         hitRecoveryDuration: 0.2f,
-                        attackDuration: 0.5f)
+                        attackDamage: 20,
+                        attackDuration: 0.5f,
+                        attackHitTime: 0.2f,
+                        attackRange: 1.5f,
+                        attackRadius: 0.8f)
+                },
+                {
+                    typeof(TrainingDummyCharacter),
+                    new CharacterConfig(
+                        "ARPG/Character/Dummy",
+                        "TrainingDummy",
+                        moveSpeed: 5f,
+                        gravity: -20f,
+                        rotationSpeed: 720f,
+                        maxHealth: 100,
+                        hitRecoveryDuration: 0.2f,
+                        attackDamage: 20,
+                        attackDuration: 0.5f,
+                        attackHitTime: 0.2f,
+                        attackRange: 1.5f,
+                        attackRadius: 0.8f)
                 }
             };
 
